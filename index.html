@@ -93,19 +93,34 @@
               <label class="sprite-slot" data-state="happy">
                 <span class="slot-label">待机</span>
                 <img class="slot-preview" id="slotHappy" alt="待机" />
-                <input class="slot-input" type="file" accept="image/*" data-state="happy" />
+                <select class="slot-mode" data-state="happy">
+                  <option value="single">Single frame</option>
+                  <option value="sequence">Sequence</option>
+                </select>
+                <span class="slot-meta" data-state="happy">1 frame</span>
+                <input class="slot-input" type="file" accept="image/*" data-state="happy" multiple />
                 <button class="slot-clear" data-state="happy" type="button">✕</button>
               </label>
               <label class="sprite-slot" data-state="bark">
                 <span class="slot-label">攻击</span>
                 <img class="slot-preview" id="slotBark" alt="攻击" />
-                <input class="slot-input" type="file" accept="image/*" data-state="bark" />
+                <select class="slot-mode" data-state="bark">
+                  <option value="single">Single frame</option>
+                  <option value="sequence">Sequence</option>
+                </select>
+                <span class="slot-meta" data-state="bark">1 frame</span>
+                <input class="slot-input" type="file" accept="image/*" data-state="bark" multiple />
                 <button class="slot-clear" data-state="bark" type="button">✕</button>
               </label>
               <label class="sprite-slot" data-state="dead">
                 <span class="slot-label">死亡</span>
                 <img class="slot-preview" id="slotDead" alt="死亡" />
-                <input class="slot-input" type="file" accept="image/*" data-state="dead" />
+                <select class="slot-mode" data-state="dead">
+                  <option value="single">Single frame</option>
+                  <option value="sequence">Sequence</option>
+                </select>
+                <span class="slot-meta" data-state="dead">1 frame</span>
+                <input class="slot-input" type="file" accept="image/*" data-state="dead" multiple />
                 <button class="slot-clear" data-state="dead" type="button">✕</button>
               </label>
               </div>

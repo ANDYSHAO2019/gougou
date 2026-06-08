@@ -468,6 +468,19 @@ function readImageFile(file, callback) {
   reader.readAsDataURL(file);
 }
 
+function readImageFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith("image/")) {
+      reject(new Error("Not an image file"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(event.target.result);
+    reader.onerror = () => reject(reader.error || new Error("Unable to read image"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function effectDraftFromEditor() {
   return normalizeAssetConfig({
     effects: {
@@ -539,16 +552,7 @@ function loadSpriteEditorUI() {
   populateAssetDogSelect();
   const custom = getCustomSprites(editorDogId());
   for (const state of ["happy", "bark", "dead"]) {
-    const slot  = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
-    const stateData = custom[state];
-    const wrapper = slot.closest(".sprite-slot");
-    if (stateData) {
-      slot.src = stateData;
-      wrapper.classList.add("has-image");
-    } else {
-      slot.src = DEFAULT_DOG_ASSETS[state];
-      wrapper.classList.remove("has-image");
-    }
+    renderSpriteSlot(state, custom[state] || DEFAULT_DOG_ASSETS[state], Boolean(custom[state]));
   }
   if (el.assetBackgroundPreview) {
     setBackgroundDraft(config.background.image);
@@ -571,12 +575,53 @@ function closeSpriteEditor() {
 }
 
 // 将用户选择的文件转为 base64，写入对应 slot
-function handleSpriteFileInput(state, file) {
-  readImageFile(file, (dataUrl) => {
-    const slot = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
-    slot.src = dataUrl;
-    slot.closest(".sprite-slot").classList.add("has-image");
-  });
+function spriteSlotId(state) {
+  return `slot${state.charAt(0).toUpperCase() + state.slice(1)}`;
+}
+
+function spriteAssetFrames(asset) {
+  if (!asset) return [];
+  if (typeof asset === "string") return [asset];
+  if (Array.isArray(asset.frames)) return asset.frames.filter(Boolean);
+  return [];
+}
+
+function renderSpriteSlot(state, asset, isCustom = true) {
+  const slot = document.getElementById(spriteSlotId(state));
+  if (!slot) return;
+  const wrapper = slot.closest(".sprite-slot");
+  const mode = wrapper.querySelector(".slot-mode");
+  const meta = wrapper.querySelector(".slot-meta");
+  const frames = spriteAssetFrames(asset);
+  const displayFrames = frames.length ? frames : [DEFAULT_DOG_ASSETS[state]];
+  const isSequence = typeof asset === "object" && frames.length > 1;
+  slot.src = displayFrames[0];
+  wrapper.dataset.frames = JSON.stringify(displayFrames);
+  wrapper.dataset.custom = isCustom ? "1" : "";
+  wrapper.dataset.fps = typeof asset === "object" && asset.fps ? String(asset.fps) : "8";
+  wrapper.dataset.loop = typeof asset === "object" && asset.loop === false ? "0" : "1";
+  wrapper.classList.toggle("has-image", isCustom);
+  if (mode) mode.value = isSequence ? "sequence" : "single";
+  if (meta) meta.textContent = `${displayFrames.length} frame${displayFrames.length > 1 ? "s" : ""}`;
+}
+
+async function handleSpriteFileInput(state, files) {
+  const imageFiles = Array.from(files || []).filter((file) => file.type.startsWith("image/"));
+  if (!imageFiles.length) return;
+  const frames = await Promise.all(imageFiles.map(readImageFileAsDataUrl));
+  renderSpriteSlot(state, frames.length > 1 ? { frames, fps: 8, loop: true } : frames[0], true);
+}
+
+function spriteSlotAssetForSave(slot, state) {
+  const wrapper = slot.closest(".sprite-slot");
+  const frames = JSON.parse(wrapper.dataset.frames || "[]").filter(Boolean);
+  const mode = wrapper.querySelector(".slot-mode")?.value || "single";
+  if (mode !== "sequence" || frames.length < 2) return slot.src;
+  return {
+    frames,
+    fps: Number(wrapper.dataset.fps) || 8,
+    loop: wrapper.dataset.loop !== "0",
+  };
 }
 
 function saveSpriteEditor() {
@@ -590,7 +635,7 @@ function saveSpriteEditor() {
         ([k, v]) => k === state || !slot.src.includes(v)
       );
       if (!isDefault || slot.src.startsWith("data:")) {
-        custom[state] = slot.src;
+        custom[state] = spriteSlotAssetForSave(slot, state);
       }
     }
   }
@@ -677,15 +722,29 @@ function initSpriteEditor() {
   for (const state of ["happy", "bark", "dead"]) {
     const input = modal.querySelector(`.slot-input[data-state="${state}"]`);
     input?.addEventListener("change", () => {
-      if (input.files[0]) handleSpriteFileInput(state, input.files[0]);
+      if (input.files?.length) handleSpriteFileInput(state, input.files);
+    });
+
+    const mode = modal.querySelector(`.slot-mode[data-state="${state}"]`);
+    mode?.addEventListener("click", (event) => event.stopPropagation());
+    mode?.addEventListener("change", () => {
+      const slot = document.getElementById(spriteSlotId(state));
+      const wrapper = slot.closest(".sprite-slot");
+      const meta = wrapper.querySelector(".slot-meta");
+      const frames = JSON.parse(wrapper.dataset.frames || "[]").filter(Boolean);
+      if (mode.value === "single" && frames.length) {
+        wrapper.dataset.frames = JSON.stringify([frames[0]]);
+        slot.src = frames[0];
+        if (meta) meta.textContent = "1 frame";
+      } else if (meta) {
+        meta.textContent = `${frames.length || 1} frame${frames.length > 1 ? "s" : ""}`;
+      }
     });
 
     // 清除按钮
     const clearBtn = modal.querySelector(`.slot-clear[data-state="${state}"]`);
     clearBtn?.addEventListener("click", () => {
-      const slot = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
-      slot.src = DEFAULT_DOG_ASSETS[state];
-      slot.closest(".sprite-slot").classList.remove("has-image");
+      renderSpriteSlot(state, DEFAULT_DOG_ASSETS[state], false);
       const input2 = modal.querySelector(`.slot-input[data-state="${state}"]`);
       if (input2) input2.value = "";
     });
@@ -697,8 +756,7 @@ function initSpriteEditor() {
     slotEl?.addEventListener("drop", (e) => {
       e.preventDefault();
       slotEl.classList.remove("drag-over");
-      const file = e.dataTransfer.files[0];
-      if (file) handleSpriteFileInput(state, file);
+      if (e.dataTransfer.files?.length) handleSpriteFileInput(state, e.dataTransfer.files);
     });
   }
 

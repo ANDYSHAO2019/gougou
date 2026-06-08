@@ -134,3 +134,10 @@ P2-2A runtime target:
 - [x] Runtime preloading includes every frame in sequence assets.
 - [x] Browser validation confirms custom sequence frames animate in the dog sprite.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P2-2B editor target:
+- [x] Character editor exposes single-frame and sequence-frame modes per action slot.
+- [x] Multi-image upload stores sequence assets as `{ "frames": [], "fps": 8, "loop": true }`.
+- [x] One-image upload remains compatible with string sprite assets.
+- [x] Browser validation confirms editor upload/save writes both formats correctly.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.
