@@ -161,3 +161,10 @@ P3-1 online asset sync target:
 - [x] Leaving the room clears temporary synced asset config.
 - [x] Browser validation confirms guest receives host custom sprite/background.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P3-2 online asset status target:
+- [x] Online lobby displays local asset pack hash and size.
+- [x] Guest lobby displays waiting/synced host asset pack state.
+- [x] Asset status refreshes after editor save/import.
+- [x] Browser validation confirms host/local and guest/synced status text.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

@@ -160,6 +160,7 @@ const el = {
   roomCode: document.querySelector("#roomCode"),
   roomStateBadge: document.querySelector("#roomStateBadge"),
   onlineStatus: document.querySelector("#onlineStatus"),
+  assetSyncStatus: document.querySelector("#assetSyncStatus"),
   localPlayerName: document.querySelector("#localPlayerName"),
   localPlayerDog: document.querySelector("#localPlayerDog"),
   localReadyState: document.querySelector("#localReadyState"),
@@ -740,6 +741,7 @@ function saveSpriteEditor() {
   config.effects.particleBoost = Number(el.assetParticleBoost?.value || 1);
   saveAssetConfig(config);
   updateAssetConfigSize(getAssetConfig());
+  updateAssetSyncStatus();
   // 立刻刷新当前角色的精灵
   const player = currentDog();
   sprites.player.setAssets(assetsForDog(player));
@@ -805,6 +807,7 @@ function initSpriteEditor() {
       saveAssetConfig(config);
       loadSpriteEditorUI();
       updateAssetConfigSize(config);
+      updateAssetSyncStatus();
       sprites.player.setAssets(assetsForDog(currentDog()));
       sprites.enemy.setAssets(assetsForDog(enemyDog()));
       setAssetConfigStatus("导入成功，已应用配置", "ok");
@@ -901,12 +904,31 @@ function updateOnlineLobbyUI(statusText = "") {
   if (el.roomStateBadge) {
     el.roomStateBadge.textContent = connected ? "已连接" : hasRoom ? "等待中" : "好友房间";
   }
+  updateAssetSyncStatus();
   if (statusText) setOnlineStatus(statusText);
   if (el.hostOnlineBtn) el.hostOnlineBtn.disabled = hasRoom;
   if (el.joinOnlineBtn) el.joinOnlineBtn.disabled = hasRoom;
   if (el.copySignalBtn) el.copySignalBtn.disabled = !hasRoom;
   if (el.leaveOnlineBtn) el.leaveOnlineBtn.disabled = !hasRoom;
   if (el.onlineEnterBtn) el.onlineEnterBtn.disabled = !connected;
+}
+
+function updateAssetSyncStatus() {
+  if (!el.assetSyncStatus) return;
+  const pack = onlineAssetPack();
+  const hasRoom = Boolean(game.online.roomId);
+  if (game.online.role === "guest") {
+    if (game.online.syncedAssetConfig) {
+      el.assetSyncStatus.textContent = `Asset pack: synced host ${game.online.syncedAssetHash.slice(0, 8)} · ${formatBytes(pack.bytes)}`;
+      el.assetSyncStatus.dataset.state = "synced";
+    } else {
+      el.assetSyncStatus.textContent = "Asset pack: waiting for host";
+      el.assetSyncStatus.dataset.state = "waiting";
+    }
+    return;
+  }
+  el.assetSyncStatus.textContent = `Asset pack: local ${pack.hash.slice(0, 8)} · ${formatBytes(pack.bytes)}`;
+  el.assetSyncStatus.dataset.state = hasRoom ? "synced" : "local";
 }
 
 function enterOnlineBattle() {
