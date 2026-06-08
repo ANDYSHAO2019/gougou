@@ -1900,6 +1900,13 @@ function micLoop() {
   requestAnimationFrame(micLoop);
 }
 
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
 async function countdown() {
   const steps = ["3", "2", "1", "BARK!"];
   for (const step of steps) {
@@ -2121,4 +2128,5 @@ updateOnlineLobbyUI("选择创建或加入房间");
 initSpriteEditor();
 loadSpriteAssets();
 preloadGameAssets();
+registerServiceWorker();
 micLoop();

@@ -183,3 +183,10 @@ P3-4 cloud deployment target:
 - [x] Public `/health` endpoint responds OK after deploy.
 - [x] Public page loads with latest asset sync UI and editor battle preview.
 - [x] `DEPLOY.md` documents current cloud deployment path and steps.
+
+P4-1 PWA target:
+- [x] App includes `manifest.webmanifest`.
+- [x] App registers a conservative network-first service worker.
+- [x] Cloud server serves `.webmanifest` with manifest MIME type.
+- [x] Browser validation confirms manifest link and service worker file are reachable.
+- [x] `node --check game.js`, `node --check server/server.js`, and `node tools/smoke-test.js` pass.

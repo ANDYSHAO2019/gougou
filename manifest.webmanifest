@@ -1,0 +1,24 @@
+{
+  "name": "汪汪大作战",
+  "short_name": "汪汪",
+  "description": "用汪汪声和朋友对战的可爱狗狗小游戏。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e9fff2",
+  "theme_color": "#ffcf5d",
+  "icons": [
+    {
+      "src": "./assets/dogs/player/idle_000.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/dogs/player/attack_003.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
