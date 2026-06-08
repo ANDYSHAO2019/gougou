@@ -168,3 +168,10 @@ P3-2 online asset status target:
 - [x] Asset status refreshes after editor save/import.
 - [x] Browser validation confirms host/local and guest/synced status text.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P3-3 online asset E2E target:
+- [x] Public room server health endpoint responds OK.
+- [x] Two independent browser pages can create and join a real room.
+- [x] Guest receives host custom sprite through real WebSocket relay.
+- [x] Guest lobby shows synced host asset pack hash/size.
+- [x] Host and guest can leave the room cleanly after the test.
