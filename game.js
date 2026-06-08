@@ -200,6 +200,7 @@ const el = {
   assetPanels: document.querySelectorAll(".asset-tab-panel"),
   assetDogSelect: document.querySelector("#assetDogSelect"),
   assetBackgroundInput: document.querySelector("#assetBackgroundInput"),
+  assetBackgroundClear: document.querySelector("#assetBackgroundClear"),
   assetBackgroundPreview: document.querySelector("#assetBackgroundPreview"),
   assetWaveColor: document.querySelector("#assetWaveColor"),
   assetEnemyWaveColor: document.querySelector("#assetEnemyWaveColor"),
@@ -370,8 +371,15 @@ function applyAssetConfig(config = getAssetConfig()) {
     el.arena.style.backgroundImage = "";
   }
   if (el.assetBackgroundPreview) {
-    el.assetBackgroundPreview.style.backgroundImage = normalized.background.image ? `url("${normalized.background.image}")` : "";
+    setBackgroundDraft(normalized.background.image);
   }
+}
+
+function setBackgroundDraft(image = "") {
+  if (!el.assetBackgroundPreview) return;
+  el.assetBackgroundPreview.dataset.assetImage = image || "";
+  el.assetBackgroundPreview.style.backgroundImage = image ? `url("${image}")` : "";
+  if (el.assetBackgroundInput && !image) el.assetBackgroundInput.value = "";
 }
 
 function readImageFile(file, callback) {
@@ -440,8 +448,7 @@ function loadSpriteEditorUI() {
     }
   }
   if (el.assetBackgroundPreview) {
-    el.assetBackgroundPreview.style.backgroundImage = config.background.image ? `url("${config.background.image}")` : "";
-    el.assetBackgroundPreview.dataset.assetImage = config.background.image || "";
+    setBackgroundDraft(config.background.image);
   }
   if (el.assetWaveColor) el.assetWaveColor.value = config.effects.waveColor;
   if (el.assetEnemyWaveColor) el.assetEnemyWaveColor.value = config.effects.enemyWaveColor;
@@ -485,7 +492,7 @@ function saveSpriteEditor() {
   }
   config.dogs ||= {};
   config.dogs[editorDogId()] = custom;
-  config.background.image = el.assetBackgroundPreview?.dataset.assetImage || config.background.image || "";
+  config.background.image = el.assetBackgroundPreview ? (el.assetBackgroundPreview.dataset.assetImage || "") : config.background.image || "";
   config.effects.waveColor = el.assetWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.waveColor;
   config.effects.enemyWaveColor = el.assetEnemyWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.enemyWaveColor;
   config.effects.glyphs = (el.assetGlyphs?.value || "").split(",").map((item) => item.trim()).filter(Boolean);
@@ -530,9 +537,11 @@ function initSpriteEditor() {
   el.assetBackgroundInput?.addEventListener("change", () => {
     const file = el.assetBackgroundInput.files?.[0];
     readImageFile(file, (dataUrl) => {
-      el.assetBackgroundPreview.dataset.assetImage = dataUrl;
-      el.assetBackgroundPreview.style.backgroundImage = `url("${dataUrl}")`;
+      setBackgroundDraft(dataUrl);
     });
+  });
+  el.assetBackgroundClear?.addEventListener("click", () => {
+    setBackgroundDraft("");
   });
   el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {

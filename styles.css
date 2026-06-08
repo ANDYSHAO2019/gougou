@@ -387,6 +387,12 @@ button {
     url("./assets/backgrounds/backyard-arena-ai-clean_001.jpg") center / cover no-repeat;
 }
 
+.asset-inline-action {
+  justify-self: end;
+  min-height: 38px;
+  padding: 6px 12px;
+}
+
 #assetPanelBackground,
 #assetPanelEffects,
 #assetPanelData {
