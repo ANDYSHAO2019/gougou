@@ -131,6 +131,10 @@ const game = {
     roundStarting: false,
     remoteDogId: "golden",
     roomId: "",
+    signalSource: null,
+    sessionId: "",
+    pendingCandidates: [],
+    signalChunks: {},
   },
 };
 
@@ -295,7 +299,8 @@ function setMode(mode) {
 
 function closeOnlineConnection() {
   game.online.channel?.close();
-  game.online.peer?.destroy?.();
+  game.online.peer?.close?.();
+  game.online.signalSource?.close?.();
   Object.assign(game.online, {
     role: "",
     peer: null,
@@ -306,72 +311,199 @@ function closeOnlineConnection() {
     roundStarting: false,
     remoteDogId: "golden",
     roomId: "",
+    signalSource: null,
+    sessionId: "",
+    pendingCandidates: [],
+    signalChunks: {},
   });
   setOnlineStatus("未连接");
 }
 
 function makeRoomId() {
-  return `gougou${Math.random().toString(36).slice(2, 8)}`;
+  if (window.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(6);
+    window.crypto.getRandomValues(bytes);
+    return `gougou${Array.from(bytes, (byte) => byte.toString(36).padStart(2, "0")).join("").slice(0, 10)}`;
+  }
+  return `gougou${Math.random().toString(36).slice(2, 12)}`;
 }
 
-function requirePeerJs() {
-  if (typeof Peer === "undefined") {
-    throw new Error("联网服务加载失败，请刷新页面");
+const SIGNAL_BASE = "https://ntfy.sh/";
+const SIGNAL_CHUNK_SIZE = 3000;
+const RTC_CONFIG = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+function makeSessionId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function signalUrl(roomId) {
+  return `${SIGNAL_BASE}${encodeURIComponent(roomId)}`;
+}
+
+async function publishSignal(type, payload = {}) {
+  if (!game.online.roomId || !game.online.sessionId) return;
+  const message = {
+    game: "gougou-battle",
+    type,
+    role: game.online.role,
+    sid: game.online.sessionId,
+    payload,
+    at: Date.now(),
+  };
+  const text = JSON.stringify(message);
+  if (text.length <= SIGNAL_CHUNK_SIZE) {
+    await postSignalText(text);
+    return;
+  }
+  const chunkId = makeSessionId();
+  const total = Math.ceil(text.length / SIGNAL_CHUNK_SIZE);
+  for (let index = 0; index < total; index += 1) {
+    await postSignalText(JSON.stringify({
+      game: "gougou-battle-chunk",
+      sid: game.online.sessionId,
+      chunkId,
+      index,
+      total,
+      text: text.slice(index * SIGNAL_CHUNK_SIZE, (index + 1) * SIGNAL_CHUNK_SIZE),
+      at: Date.now(),
+    }));
   }
 }
 
-function createOnlinePeer(role, id) {
-  closeOnlineConnection();
-  requirePeerJs();
-  const peer = new Peer(id || undefined, {
-    host: "0.peerjs.com",
-    port: 443,
-    path: "/",
-    secure: true,
-    debug: 1,
+async function postSignalText(text) {
+  await fetch(signalUrl(game.online.roomId), {
+    method: "POST",
+    body: text,
   });
+}
+
+function openSignal(roomId) {
+  game.online.signalSource?.close?.();
+  const source = new EventSource(`${signalUrl(roomId)}/sse`);
+  game.online.signalSource = source;
+  source.addEventListener("message", (event) => {
+    try {
+      const envelope = JSON.parse(event.data);
+      if (envelope.event !== "message" || !envelope.message) return;
+      const message = JSON.parse(envelope.message);
+      if (message.sid === game.online.sessionId) return;
+      if (message.game === "gougou-battle-chunk") {
+        handleSignalChunk(message);
+        return;
+      }
+      if (message.game !== "gougou-battle") return;
+      handleSignalMessage(message);
+    } catch {
+      setOnlineStatus("信令消息无效");
+    }
+  });
+  source.addEventListener("error", () => {
+    if (!game.online.connected) setOnlineStatus("房间信令重连中");
+  });
+}
+
+function handleSignalChunk(chunk) {
+  const key = `${chunk.sid}:${chunk.chunkId}`;
+  const bucket = game.online.signalChunks[key] || {
+    total: chunk.total,
+    parts: [],
+    received: 0,
+    at: Date.now(),
+  };
+  if (!bucket.parts[chunk.index]) {
+    bucket.parts[chunk.index] = chunk.text;
+    bucket.received += 1;
+  }
+  game.online.signalChunks[key] = bucket;
+  if (bucket.received < bucket.total) return;
+  delete game.online.signalChunks[key];
+  const message = JSON.parse(bucket.parts.join(""));
+  if (message.game === "gougou-battle" && message.sid !== game.online.sessionId) {
+    handleSignalMessage(message);
+  }
+}
+
+async function addRemoteCandidate(candidate) {
+  if (!candidate || !game.online.peer) return;
+  if (!game.online.peer.remoteDescription) {
+    game.online.pendingCandidates.push(candidate);
+    return;
+  }
+  try {
+    await game.online.peer.addIceCandidate(candidate);
+  } catch {
+    setOnlineStatus("网络候选失败");
+  }
+}
+
+async function flushRemoteCandidates() {
+  const candidates = game.online.pendingCandidates.splice(0);
+  for (const candidate of candidates) {
+    await addRemoteCandidate(candidate);
+  }
+}
+
+async function handleSignalMessage(message) {
+  const peer = game.online.peer;
+  if (!peer) return;
+  const { type, payload = {} } = message;
+  if (type === "offer" && game.online.role === "host") {
+    await peer.setRemoteDescription(payload.sdp);
+    await flushRemoteCandidates();
+    await peer.setLocalDescription(await peer.createAnswer());
+    await publishSignal("answer", { sdp: peer.localDescription });
+    setOnlineStatus("朋友加入中");
+    return;
+  }
+  if (type === "answer" && game.online.role === "guest") {
+    await peer.setRemoteDescription(payload.sdp);
+    await flushRemoteCandidates();
+    setOnlineStatus("等待直连完成");
+    return;
+  }
+  if (type === "candidate") {
+    await addRemoteCandidate(payload.candidate);
+  }
+}
+
+function createOnlinePeer(role) {
+  closeOnlineConnection();
+  const peer = new RTCPeerConnection(RTC_CONFIG);
   game.online.peer = peer;
   game.online.role = role;
-  peer.on("connection", (connection) => {
-    if (game.online.channel && game.online.channel.open) {
-      connection.close();
-      return;
+  peer.addEventListener("icecandidate", (event) => {
+    if (event.candidate) publishSignal("candidate", { candidate: event.candidate }).catch(() => {});
+  });
+  peer.addEventListener("connectionstatechange", () => {
+    const state = peer.connectionState;
+    if (state === "connected") setOnlineStatus("已连接");
+    if (state === "failed" || state === "disconnected" || state === "closed") {
+      game.online.connected = false;
+      setOnlineStatus("连接中断");
     }
-    setupOnlineChannel(connection);
   });
-  peer.on("disconnected", () => {
-    game.online.connected = false;
-    setOnlineStatus("连接中断");
-  });
-  peer.on("close", () => {
-    game.online.connected = false;
-    setOnlineStatus("连接关闭");
-  });
-  peer.on("error", (error) => {
-    game.online.connected = false;
-    setOnlineStatus(error?.type === "unavailable-id" ? "房间号已被占用" : "联网失败");
-  });
+  peer.addEventListener("datachannel", (event) => setupOnlineChannel(event.channel));
   return peer;
 }
 
 function setupOnlineChannel(channel) {
   game.online.channel = channel;
-  channel.on("open", () => {
+  channel.addEventListener("open", () => {
     game.online.connected = true;
     setOnlineStatus("已连接");
     sendOnlineMessage("hello", { dogId: game.selectedDogId, name: currentDog().name });
   });
-  channel.on("close", () => {
+  channel.addEventListener("close", () => {
     game.online.connected = false;
     setOnlineStatus("连接关闭");
   });
-  channel.on("error", () => {
+  channel.addEventListener("error", () => {
     game.online.connected = false;
     setOnlineStatus("连接失败");
   });
-  channel.on("data", (data) => {
+  channel.addEventListener("message", (event) => {
     try {
-      handleOnlineMessage(typeof data === "string" ? JSON.parse(data) : data);
+      handleOnlineMessage(JSON.parse(event.data));
     } catch {
       setOnlineStatus("收到无效消息");
     }
@@ -380,7 +512,7 @@ function setupOnlineChannel(channel) {
 
 function sendOnlineMessage(type, payload = {}) {
   const channel = game.online.channel;
-  if (!channel || !channel.open) return false;
+  if (!channel || channel.readyState !== "open") return false;
   channel.send(JSON.stringify({ type, payload, at: Date.now() }));
   return true;
 }
@@ -388,22 +520,12 @@ function sendOnlineMessage(type, payload = {}) {
 async function createOnlineRoom() {
   setMode("online");
   const roomId = makeRoomId();
-  const peer = createOnlinePeer("host", roomId);
-  setOnlineStatus("创建房间中");
-  await new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error("创建超时，请重试")), 9000);
-    peer.on("open", (id) => {
-      window.clearTimeout(timer);
-      game.online.roomId = id;
-      if (el.roomCode) el.roomCode.value = id;
-      setOnlineStatus("等待朋友加入");
-      resolve(id);
-    });
-    peer.on("error", (error) => {
-      window.clearTimeout(timer);
-      reject(error);
-    });
-  });
+  createOnlinePeer("host");
+  game.online.roomId = roomId;
+  game.online.sessionId = makeSessionId();
+  openSignal(roomId);
+  if (el.roomCode) el.roomCode.value = roomId;
+  setOnlineStatus("等待朋友加入");
 }
 
 async function joinOnlineRoom() {
@@ -412,26 +534,15 @@ async function joinOnlineRoom() {
   if (!roomId) throw new Error("请输入房间号");
   const peer = createOnlinePeer("guest");
   game.online.roomId = roomId;
+  game.online.sessionId = makeSessionId();
+  openSignal(roomId);
   setOnlineStatus("加入房间中");
-  await new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error("连接超时，请检查房间号")), 12000);
-    peer.on("open", () => {
-      const connection = peer.connect(roomId, { reliable: true });
-      setupOnlineChannel(connection);
-      connection.on("open", () => {
-        window.clearTimeout(timer);
-        resolve();
-      });
-      connection.on("error", (error) => {
-        window.clearTimeout(timer);
-        reject(error);
-      });
-    });
-    peer.on("error", (error) => {
-      window.clearTimeout(timer);
-      reject(error);
-    });
-  });
+  setupOnlineChannel(peer.createDataChannel("bark-battle"));
+  await peer.setLocalDescription(await peer.createOffer());
+  await publishSignal("offer", { sdp: peer.localDescription });
+  window.setTimeout(() => {
+    if (!game.online.connected) setOnlineStatus("连接较慢，请确认房主页面未关闭");
+  }, 16000);
 }
 
 function handleOnlineMessage(message) {

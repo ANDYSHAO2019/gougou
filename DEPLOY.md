@@ -42,5 +42,5 @@ https://gitee.com/你的用户名/bark-battle.git
 
 - 麦克风权限需要 HTTPS，GitHub Pages 满足这个条件。
 - Gitee Pages 是否支持 HTTPS 取决于当前账号和 Pages 配置。
-- 联网对战当前使用 PeerJS 房间号连接，房主复制房间号给朋友即可。
+- 联网对战当前使用 ntfy 公开 topic 自动交换 WebRTC 信令，房主复制房间号给朋友即可。
 - 如果要做“随机匹配/排行榜/永久房间”，需要额外部署一个游戏服务器。
