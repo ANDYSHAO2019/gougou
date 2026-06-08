@@ -154,3 +154,10 @@ P2-4 editor battle preview target:
 - [x] Preview battle button plays bark pose and real wave/glyph effect.
 - [x] Browser validation confirms preview updates after upload and effect preview creates particles.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P3-1 online asset sync target:
+- [x] Host sends current asset config with online hello/dog/ready messages.
+- [x] Guest applies host asset config as a temporary synced pack.
+- [x] Leaving the room clears temporary synced asset config.
+- [x] Browser validation confirms guest receives host custom sprite/background.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

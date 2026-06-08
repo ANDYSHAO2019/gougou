@@ -137,6 +137,8 @@ const game = {
     remoteDogId: "golden",
     roomId: "",
     sessionId: "",
+    syncedAssetConfig: null,
+    syncedAssetHash: "",
   },
 };
 
@@ -393,6 +395,9 @@ function normalizeAssetConfig(config = {}) {
 }
 
 function getAssetConfig() {
+  if (game.online?.syncedAssetConfig) {
+    return normalizeAssetConfig(game.online.syncedAssetConfig);
+  }
   try {
     const stored = JSON.parse(localStorage.getItem(ASSET_CONFIG_KEY));
     if (stored) return normalizeAssetConfig(stored);
@@ -938,6 +943,8 @@ function closeOnlineConnection() {
     remoteDogId: "golden",
     roomId: "",
     sessionId: "",
+    syncedAssetConfig: null,
+    syncedAssetHash: "",
   });
   if (el.roomCode) el.roomCode.value = "";
   updateOnlineLobbyUI("选择创建或加入房间");
@@ -960,6 +967,50 @@ function sendRoomCommand(type, payload = {}) {
   return true;
 }
 
+function hashText(text) {
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+function onlineAssetPack() {
+  const config = getAssetConfig();
+  const text = JSON.stringify(config);
+  const bytes = new Blob([text]).size;
+  return {
+    kind: config.kind,
+    schemaVersion: config.schemaVersion,
+    hash: hashText(text),
+    bytes,
+    config,
+  };
+}
+
+function onlinePlayerPayload(extra = {}) {
+  return {
+    dogId: game.selectedDogId,
+    name: currentDog().name,
+    role: game.online.role,
+    assetPack: onlineAssetPack(),
+    ...extra,
+  };
+}
+
+function applySyncedAssetPack(pack, senderRole = "") {
+  if (!pack?.config || game.online.role !== "guest" || senderRole !== "host") return false;
+  if (pack.hash && pack.hash === game.online.syncedAssetHash) return false;
+  game.online.syncedAssetConfig = normalizeAssetConfig(pack.config);
+  game.online.syncedAssetHash = pack.hash || hashText(JSON.stringify(game.online.syncedAssetConfig));
+  applyAssetConfig(game.online.syncedAssetConfig);
+  sprites.player.setAssets(assetsForDog(currentDog()));
+  sprites.enemy.setAssets(assetsForDog(enemyDog()));
+  updateOnlineLobbyUI(`已同步房主资源包 ${formatBytes(pack.bytes || 0)}`);
+  return true;
+}
+
 function handleRoomMessage(message) {
   const { type, payload = {} } = message;
   if (type === "connected") return;
@@ -973,7 +1024,7 @@ function handleRoomMessage(message) {
     setOnlineStatus(type === "created" ? "等待朋友加入" : "已连接，可以进入对战");
     updateOnlineLobbyUI(type === "created" ? "房间已创建，复制邀请给朋友" : "已连接，可以进入战斗场地");
     if (type === "joined") {
-      sendOnlineMessage("hello", { dogId: game.selectedDogId, name: currentDog().name });
+      sendOnlineMessage("hello", onlinePlayerPayload());
     }
     return;
   }
@@ -982,7 +1033,7 @@ function handleRoomMessage(message) {
     game.online.remoteReady = false;
     updateOnlineLobbyUI("朋友已加入，可以进入战斗场地");
     setOnlineStatus("已连接，可以进入对战");
-    sendOnlineMessage("hello", { dogId: game.selectedDogId, name: currentDog().name });
+    sendOnlineMessage("hello", onlinePlayerPayload());
     return;
   }
   if (type === "peer-left" || type === "room-expired") {
@@ -1076,6 +1127,7 @@ function leaveOnlineRoom() {
 
 function handleOnlineMessage(message) {
   const { type, payload = {} } = message;
+  applySyncedAssetPack(payload.assetPack, payload.role);
   if (type === "hello" || type === "dog") {
     game.online.remoteDogId = payload.dogId || game.online.remoteDogId;
     updateOnlineLobbyUI();
@@ -1212,7 +1264,7 @@ function renderDogCards() {
       }
       game.selectedDogId = dog.id;
       saveGame();
-      sendOnlineMessage("dog", { dogId: dog.id, name: dog.name });
+      sendOnlineMessage("dog", onlinePlayerPayload({ dogId: dog.id, name: dog.name }));
       updateOnlineLobbyUI();
       renderDogCards();
     });
@@ -1249,7 +1301,7 @@ function showBattle() {
   sprites.enemy.setAssets(assetsForDog(enemy));
   el.playerName.textContent = `← ${player.name}`;
   el.enemyName.textContent = game.mode === "online" ? `${enemy.name} P2P →` : `${enemy.name} AI →`;
-  sendOnlineMessage("dog", { dogId: game.selectedDogId, name: player.name });
+  sendOnlineMessage("dog", onlinePlayerPayload({ dogId: game.selectedDogId, name: player.name }));
   resetGame();
   if (game.mode === "online") {
     el.startBtn.disabled = false;
@@ -1877,7 +1929,7 @@ async function startOnlineGame() {
     resetGame();
     await calibrateBarkInput();
     game.online.localReady = true;
-    sendOnlineMessage("ready", { dogId: game.selectedDogId });
+    sendOnlineMessage("ready", onlinePlayerPayload({ dogId: game.selectedDogId }));
     updateOnlineLobbyUI(game.online.remoteReady ? "双方已准备，正在同步开局" : "你已准备，等待对方");
     setOnlineStatus(game.online.remoteReady ? "双方已准备" : "等待对方准备");
     el.startBtn.textContent = game.online.remoteReady ? "同步开局" : "等待对方";
