@@ -11,101 +11,6 @@
   --shadow: rgba(38, 48, 74, 0.18);
 }
 
-/* ── 资源编辑器颜色变量（由 JS 动态设置）── */
-.arena {
-  --asset-skyColor:     #8ed8ff;
-  --asset-groundColor:  #7ed16a;
-  --asset-sunColor:     #ffd85a;
-  --asset-cloudColor:   #ffffff;
-  --asset-fenceColor:   #f6c36a;
-  --asset-ballColor:    #ff6b6b;
-  --asset-boneColor:    #f6c36a;
-  --asset-waveColor:    #ffe066;
-  --asset-sparkColor:   #ff9f43;
-  --asset-koWinColor:   #83e17c;
-  --asset-koLoseColor:  #ff6b6b;
-  --asset-comboColor:    #ffd84f;
-  --asset-dangerColor:  #ff4d5e;
-  --asset-btnPrimary:    #4caf50;
-  --asset-btnSecondary: #2a3f2a;
-  --asset-cardBg:       #fff7db;
-  --asset-hudBg:        #ffffff;
-  --asset-micMeterColor:#4caf50;
-}
-
-/* ── 资源编辑器覆盖规则（应用 CSS 变量）── */
-.arena {
-  background: linear-gradient(var(--asset-skyColor) 0 56%, var(--asset-groundColor) 56% 100%) !important;
-}
-.arena .sky {
-  background: var(--asset-skyColor);
-}
-.arena .sun {
-  background: var(--asset-sunColor);
-  box-shadow: 0 0 0 16px color-mix(in srgb, var(--asset-sunColor) 22%, transparent);
-}
-.arena .cloud,
-.arena .cloud::before,
-.arena .cloud::after {
-  background: var(--asset-cloudColor);
-}
-.arena .fence {
-  background:
-    repeating-linear-gradient(90deg, transparent 0 36px, color-mix(in srgb, var(--asset-fenceColor) 45%, transparent) 36px 44px),
-    linear-gradient(transparent 0 44px, var(--asset-fenceColor) 44px 74px, transparent 74px 104px, var(--asset-fenceColor) 104px 134px, transparent 134px);
-}
-.arena .ball {
-  background: radial-gradient(circle at 30% 30%, #fff 0 12%, var(--asset-ballColor) 13% 45%, color-mix(in srgb, var(--asset-ballColor) 70%, #4dabf7) 46% 72%, var(--asset-ballColor) 73%);
-}
-.arena .bone,
-.arena .bone::before,
-.arena .bone::after {
-  background: var(--asset-boneColor);
-}
-.arena .bone::before {
-  box-shadow: 0 26px 0 var(--asset-boneColor);
-}
-.arena .bone::after {
-  box-shadow: 0 26px 0 var(--asset-boneColor);
-}
-.arena .combo {
-  background: var(--asset-comboColor);
-}
-.arena .danger-label {
-  background: var(--asset-dangerColor);
-}
-.arena .push-side.push-player {
-  background: var(--asset-koWinColor);
-}
-.arena .push-side.push-enemy {
-  background: var(--asset-koLoseColor);
-}
-.arena .meter-fill {
-  background: var(--asset-micMeterColor);
-}
-.arena .primary-action {
-  background: var(--asset-btnPrimary);
-}
-.arena .secondary-action {
-  background: var(--asset-btnSecondary);
-  border-color: var(--asset-btnPrimary);
-}
-.arena .dog-card {
-  background: var(--asset-cardBg);
-}
-.arena .battle-hud {
-  background: var(--asset-hudBg);
-}
-.arena .wave-effect {
-  --wave-color: var(--asset-waveColor);
-}
-.arena .spark {
-  --spark-color: var(--asset-sparkColor);
-}
-.arena .ko-card {
-  background: var(--asset-hudBg);
-}
-
 * {
   box-sizing: border-box;
 }
@@ -266,39 +171,41 @@ button {
   grid-column: 1 / -1;
 }
 
-/* ── 资源编辑器弹窗 ────────────────────────────── */
-.asset-editor-modal {
+/* ── 角色编辑器弹窗 ─────────────────────────────── */
+.sprite-editor-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(0, 0, 0, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
 }
 
-.asset-editor-modal.hidden { display: none; }
+.sprite-editor-modal.hidden {
+  display: none;
+}
 
-.asset-editor-panel {
+.sprite-editor-panel {
   background: #1a2e1a;
   border: 2px solid #4caf50;
   border-radius: 16px;
-  padding: 20px 24px 24px;
-  width: min(680px, 98vw);
-  max-height: 92vh;
+  padding: 24px;
+  width: min(520px, 96vw);
+  max-height: 90vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 8px 48px rgba(0,0,0,0.55);
+  gap: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
 }
 
-.asset-editor-header {
+.sprite-editor-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: #a8d5a2;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
 }
 
 .icon-btn {
@@ -312,155 +219,115 @@ button {
 }
 .icon-btn:hover { background: rgba(168,213,162,0.15); }
 
-.asset-editor-tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid #2a4a2a;
-  padding-bottom: 8px;
-}
-
-.asset-tab {
-  background: none;
-  border: 1px solid transparent;
-  color: #6a9a6a;
-  font-size: 0.85rem;
-  padding: 5px 14px;
-  border-radius: 8px 8px 0 0;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-
-.asset-tab:hover { color: #a8d5a2; background: #1e3a1e; }
-
-.asset-tab.active {
-  color: #a8d5a2;
-  background: #1e3a1e;
-  border-color: #3a7a3a;
-  font-weight: 600;
-}
-
-.asset-tab-content {
-  display: none;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.asset-tab-content.active { display: flex; }
-
-.asset-editor-hint {
+.sprite-editor-hint {
   color: #7ab87a;
-  font-size: 0.8rem;
-  margin: -4px 0 0;
+  font-size: 0.82rem;
+  margin: -8px 0;
 }
 
-/* ── 资源格子 ────────────────────────────────── */
-.asset-grid {
+.sprite-slots {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
-.asset-item {
+.sprite-slot {
   position: relative;
-  border: 2px dashed #3a7a3a;
-  border-radius: 10px;
-  padding: 8px 6px 6px;
+  border: 2px dashed #4caf50;
+  border-radius: 12px;
+  padding: 10px 6px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+  min-height: 160px;
   background: #0d1f0d;
-  transition: border-color 0.15s, background 0.15s;
 }
 
-.asset-item:hover,
-.asset-item.drag-over {
-  border-color: #6aaf6a;
-  background: #122212;
+.sprite-slot:hover,
+.sprite-slot.drag-over {
+  border-color: #8fcc8f;
+  background: #152515;
 }
 
-.asset-item.has-value { border-style: solid; border-color: #4caf50; }
+.sprite-slot.has-image {
+  border-style: solid;
+}
 
-.asset-item-label {
-  font-size: 0.72rem;
+.slot-label {
+  font-size: 0.78rem;
   color: #7ab87a;
   font-weight: 600;
-  text-align: center;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
-.asset-item-preview {
-  width: 140px;
-  height: 100px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #0a150a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.asset-item-preview img {
-  width: 100%;
-  height: 100%;
+.slot-preview {
+  width: 120px;
+  height: 120px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 8px;
+  background: #0a150a;
+  /* 默认占位狗图标 */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 
-.color-preview {
-  padding: 0;
-  background: transparent;
+.slot-input {
+  display: none;
 }
 
-.color-preview input[type="color"] {
-  width: 140px;
-  height: 100px;
-  border: none;
-  border-radius: 6px;
-  padding: 0;
-  cursor: pointer;
-  background: none;
-}
-
-.asset-item-input { display: none; }
-
-.asset-item-clear {
+.slot-clear {
   position: absolute;
-  top: 3px;
-  right: 3px;
-  background: rgba(220,60,60,0.85);
+  top: 4px;
+  right: 4px;
+  background: rgba(255,80,80,0.85);
   border: none;
   color: #fff;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.65rem;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
   cursor: pointer;
-  line-height: 18px;
+  line-height: 20px;
   text-align: center;
   padding: 0;
   display: none;
 }
 
-.asset-item.has-value .asset-item-clear { display: block; }
+.sprite-slot.has-image .slot-clear {
+  display: block;
+}
 
-.asset-editor-actions {
+.slot-placeholder {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3a5a3a;
+  font-size: 0.75rem;
+  text-align: center;
+  border-radius: 8px;
+  background: #0a150a;
+}
+
+.sprite-editor-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  padding-top: 4px;
-  border-top: 1px solid #2a4a2a;
 }
 
-.asset-editor-actions .secondary-action {
+.sprite-editor-actions .secondary-action {
   background: #2a3f2a;
   color: #a8d5a2;
   border: 1px solid #4caf50;
   flex: 0 0 auto;
 }
 
-.asset-editor-actions .primary-action { flex: 1; }
+.sprite-editor-actions .primary-action {
+  flex: 1;
+}
 
 .select-screen.online-select {
   grid-template-rows: auto minmax(190px, auto) auto;
