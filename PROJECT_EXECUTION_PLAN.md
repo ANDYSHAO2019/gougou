@@ -141,3 +141,9 @@ P2-2B editor target:
 - [x] One-image upload remains compatible with string sprite assets.
 - [x] Browser validation confirms editor upload/save writes both formats correctly.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P2-3 capacity target:
+- [x] Config page shows size, risk level, and practical image compression advice.
+- [x] Uploading sprite frames reports immediate frame count and size.
+- [x] Browser validation confirms OK/Warn/Danger capacity states render correctly.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

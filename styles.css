@@ -471,6 +471,10 @@ button {
   color: #8be67f;
 }
 
+.asset-config-status[data-kind="warn"] {
+  color: #ffd27a;
+}
+
 .asset-config-size {
   color: #7ab87a;
   font-size: 0.76rem;
@@ -478,6 +482,21 @@ button {
 }
 
 .asset-config-size[data-risk="warn"] {
+  color: #ffd27a;
+}
+
+.asset-config-size[data-risk="danger"],
+.asset-config-advice[data-risk="danger"] {
+  color: #ff9f9f;
+}
+
+.asset-config-advice {
+  color: #7ab87a;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.asset-config-advice[data-risk="warn"] {
   color: #ffd27a;
 }
 

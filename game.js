@@ -215,6 +215,7 @@ const el = {
   assetImportBtn: document.querySelector("#assetImportBtn"),
   assetConfigStatus: document.querySelector("#assetConfigStatus"),
   assetConfigSize: document.querySelector("#assetConfigSize"),
+  assetConfigAdvice: document.querySelector("#assetConfigAdvice"),
 };
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -417,12 +418,46 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
+function assetCapacityInfo(bytes) {
+  if (bytes > 4 * 1024 * 1024) {
+    return {
+      risk: "danger",
+      label: "Large",
+      advice: "建议压缩图片或减少序列帧数量；浏览器本地存储可能接近上限。",
+    };
+  }
+  if (bytes > 2 * 1024 * 1024) {
+    return {
+      risk: "warn",
+      label: "Medium",
+      advice: "建议把角色图控制在 512px 内，序列帧先做 3-6 帧测试。",
+    };
+  }
+  return {
+    risk: "ok",
+    label: "OK",
+    advice: "容量适合本地预览和 JSON 备份。",
+  };
+}
+
 function updateAssetConfigSize(config = getAssetConfig()) {
   if (!el.assetConfigSize) return;
   const bytes = new Blob([JSON.stringify(config)]).size;
   const risk = bytes > 4 * 1024 * 1024 ? " · 偏大，建议压缩图片" : bytes > 2 * 1024 * 1024 ? " · 接近上限" : "";
   el.assetConfigSize.textContent = `当前配置大小：${formatBytes(bytes)}${risk}`;
   el.assetConfigSize.dataset.risk = bytes > 2 * 1024 * 1024 ? "warn" : "ok";
+}
+
+function updateAssetConfigSize(config = getAssetConfig()) {
+  if (!el.assetConfigSize) return;
+  const bytes = new Blob([JSON.stringify(config)]).size;
+  const info = assetCapacityInfo(bytes);
+  el.assetConfigSize.textContent = `Config size: ${formatBytes(bytes)} · ${info.label}`;
+  el.assetConfigSize.dataset.risk = info.risk;
+  if (el.assetConfigAdvice) {
+    el.assetConfigAdvice.textContent = info.advice;
+    el.assetConfigAdvice.dataset.risk = info.risk;
+  }
 }
 
 function downloadAssetConfig() {
@@ -610,6 +645,9 @@ async function handleSpriteFileInput(state, files) {
   if (!imageFiles.length) return;
   const frames = await Promise.all(imageFiles.map(readImageFileAsDataUrl));
   renderSpriteSlot(state, frames.length > 1 ? { frames, fps: 8, loop: true } : frames[0], true);
+  const bytes = new Blob(frames).size;
+  const info = assetCapacityInfo(bytes);
+  setAssetConfigStatus(`Loaded ${frames.length} frame${frames.length > 1 ? "s" : ""}: ${formatBytes(bytes)} · ${info.label}`, info.risk === "danger" ? "warn" : info.risk);
 }
 
 function spriteSlotAssetForSave(slot, state) {
