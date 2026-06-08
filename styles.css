@@ -163,7 +163,7 @@ button {
 }
 
 .online-enter {
-  min-height: 44px;
+  min-height: 40px;
   padding: 8px 18px;
   border-radius: 8px;
 }
@@ -200,8 +200,8 @@ button {
 
 .online-box {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px 12px;
   border: 4px solid rgba(255, 255, 255, 0.92);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
@@ -230,7 +230,7 @@ button {
 
 .room-grid input {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   border: 3px solid #ffffff;
   border-radius: 8px;
   padding: 8px 12px;
