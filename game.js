@@ -196,6 +196,17 @@ const el = {
   spriteEditorClose: document.querySelector("#spriteEditorClose"),
   spriteSaveBtn: document.querySelector("#spriteSaveBtn"),
   spriteResetBtn: document.querySelector("#spriteResetBtn"),
+  assetTabs: document.querySelectorAll(".asset-tab"),
+  assetPanels: document.querySelectorAll(".asset-tab-panel"),
+  assetBackgroundInput: document.querySelector("#assetBackgroundInput"),
+  assetBackgroundPreview: document.querySelector("#assetBackgroundPreview"),
+  assetWaveColor: document.querySelector("#assetWaveColor"),
+  assetEnemyWaveColor: document.querySelector("#assetEnemyWaveColor"),
+  assetGlyphs: document.querySelector("#assetGlyphs"),
+  assetParticleBoost: document.querySelector("#assetParticleBoost"),
+  assetConfigText: document.querySelector("#assetConfigText"),
+  assetExportBtn: document.querySelector("#assetExportBtn"),
+  assetImportBtn: document.querySelector("#assetImportBtn"),
 };
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -234,6 +245,7 @@ function preloadAudio(audio) {
 }
 
 async function preloadGameAssets() {
+  const config = getAssetConfig();
   const dogImages = new Set();
   for (const dog of DOGS) {
     dogImages.add(dog.portrait);
@@ -242,6 +254,7 @@ async function preloadGameAssets() {
   }
   await Promise.allSettled([
     preloadImage("./assets/backgrounds/backyard-arena-ai-clean_001.jpg"),
+    preloadImage(config.background.image),
     ...Array.from(dogImages, preloadImage),
     ...aiBarkPool.map(preloadAudio),
   ]);
@@ -288,15 +301,91 @@ const DEFAULT_DOG_ASSETS = {
 
 // ── 角色精灵编辑器 ─────────────────────────────────────────
 const SPRITE_EDITOR_KEY = "barkBattleCustomSprites";
+const ASSET_CONFIG_KEY = "barkBattleAssetConfigV1";
+const DEFAULT_ASSET_CONFIG = {
+  sprites: {},
+  background: {
+    image: "",
+  },
+  effects: {
+    waveColor: "#ffffff",
+    enemyWaveColor: "#ff5c48",
+    glyphs: ["汪", "BARK!", "WOOF!", "@", "#", "!", "*"],
+    particleBoost: 1,
+  },
+};
+
+function cloneAssetConfig(config) {
+  return JSON.parse(JSON.stringify(config));
+}
+
+function normalizeAssetConfig(config = {}) {
+  const base = cloneAssetConfig(DEFAULT_ASSET_CONFIG);
+  const next = {
+    ...base,
+    ...config,
+    sprites: { ...base.sprites, ...(config.sprites || {}) },
+    background: { ...base.background, ...(config.background || {}) },
+    effects: { ...base.effects, ...(config.effects || {}) },
+  };
+  if (typeof next.effects.glyphs === "string") {
+    next.effects.glyphs = next.effects.glyphs.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+  if (!Array.isArray(next.effects.glyphs) || !next.effects.glyphs.length) {
+    next.effects.glyphs = [...DEFAULT_ASSET_CONFIG.effects.glyphs];
+  }
+  next.effects.particleBoost = clamp(Number(next.effects.particleBoost) || 1, 0.5, 1.8);
+  return next;
+}
+
+function getAssetConfig() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(ASSET_CONFIG_KEY));
+    if (stored) return normalizeAssetConfig(stored);
+  } catch {}
+  try {
+    const legacySprites = JSON.parse(localStorage.getItem(SPRITE_EDITOR_KEY)) || {};
+    if (Object.keys(legacySprites).length) return normalizeAssetConfig({ sprites: legacySprites });
+  } catch {}
+  return cloneAssetConfig(DEFAULT_ASSET_CONFIG);
+}
+
+function saveAssetConfig(config) {
+  const normalized = normalizeAssetConfig(config);
+  localStorage.setItem(ASSET_CONFIG_KEY, JSON.stringify(normalized));
+  applyAssetConfig(normalized);
+}
+
+function applyAssetConfig(config = getAssetConfig()) {
+  const normalized = normalizeAssetConfig(config);
+  const effects = normalized.effects;
+  document.documentElement.style.setProperty("--asset-wave-color", effects.waveColor);
+  document.documentElement.style.setProperty("--asset-enemy-wave-color", effects.enemyWaveColor);
+  if (normalized.background.image) {
+    el.arena.style.backgroundImage = `linear-gradient(180deg, rgba(255,255,255,0.06), rgba(50,132,57,0.08)), url("${normalized.background.image}")`;
+  } else {
+    el.arena.style.backgroundImage = "";
+  }
+  if (el.assetBackgroundPreview) {
+    el.assetBackgroundPreview.style.backgroundImage = normalized.background.image ? `url("${normalized.background.image}")` : "";
+  }
+}
+
+function readImageFile(file, callback) {
+  if (!file || !file.type.startsWith("image/")) return;
+  const reader = new FileReader();
+  reader.onload = (event) => callback(event.target.result);
+  reader.readAsDataURL(file);
+}
 
 function getCustomSprites() {
-  try {
-    return JSON.parse(localStorage.getItem(SPRITE_EDITOR_KEY)) || {};
-  } catch { return {}; }
+  return getAssetConfig().sprites || {};
 }
 
 function saveCustomSprites(map) {
-  localStorage.setItem(SPRITE_EDITOR_KEY, JSON.stringify(map));
+  const config = getAssetConfig();
+  config.sprites = map || {};
+  saveAssetConfig(config);
 }
 
 function assetsForDog(dog) {
@@ -311,7 +400,8 @@ function assetsForDog(dog) {
 
 // 加载当前自定义精灵到编辑器 UI
 function loadSpriteEditorUI() {
-  const custom = getCustomSprites();
+  const config = getAssetConfig();
+  const custom = config.sprites || {};
   for (const state of ["happy", "bark", "dead"]) {
     const slot  = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
     const stateData = custom[state];
@@ -324,6 +414,15 @@ function loadSpriteEditorUI() {
       wrapper.classList.remove("has-image");
     }
   }
+  if (el.assetBackgroundPreview) {
+    el.assetBackgroundPreview.style.backgroundImage = config.background.image ? `url("${config.background.image}")` : "";
+    el.assetBackgroundPreview.dataset.assetImage = config.background.image || "";
+  }
+  if (el.assetWaveColor) el.assetWaveColor.value = config.effects.waveColor;
+  if (el.assetEnemyWaveColor) el.assetEnemyWaveColor.value = config.effects.enemyWaveColor;
+  if (el.assetGlyphs) el.assetGlyphs.value = config.effects.glyphs.join(",");
+  if (el.assetParticleBoost) el.assetParticleBoost.value = config.effects.particleBoost;
+  if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(config, null, 2);
 }
 
 function openSpriteEditor() {
@@ -337,18 +436,15 @@ function closeSpriteEditor() {
 
 // 将用户选择的文件转为 base64，写入对应 slot
 function handleSpriteFileInput(state, file) {
-  if (!file || !file.type.startsWith("image/")) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target.result;
+  readImageFile(file, (dataUrl) => {
     const slot = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
     slot.src = dataUrl;
     slot.closest(".sprite-slot").classList.add("has-image");
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function saveSpriteEditor() {
+  const config = getAssetConfig();
   const custom = {};
   for (const state of ["happy", "bark", "dead"]) {
     const slot = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
@@ -362,7 +458,13 @@ function saveSpriteEditor() {
       }
     }
   }
-  saveCustomSprites(custom);
+  config.sprites = custom;
+  config.background.image = el.assetBackgroundPreview?.dataset.assetImage || config.background.image || "";
+  config.effects.waveColor = el.assetWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.waveColor;
+  config.effects.enemyWaveColor = el.assetEnemyWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.enemyWaveColor;
+  config.effects.glyphs = (el.assetGlyphs?.value || "").split(",").map((item) => item.trim()).filter(Boolean);
+  config.effects.particleBoost = Number(el.assetParticleBoost?.value || 1);
+  saveAssetConfig(config);
   // 立刻刷新当前角色的精灵
   const player = currentDog();
   sprites.player.setAssets(assetsForDog(player));
@@ -372,7 +474,9 @@ function saveSpriteEditor() {
 }
 
 function resetSpriteEditor() {
+  localStorage.removeItem(ASSET_CONFIG_KEY);
   localStorage.removeItem(SPRITE_EDITOR_KEY);
+  applyAssetConfig(DEFAULT_ASSET_CONFIG);
   loadSpriteEditorUI();
   const player = currentDog();
   sprites.player.setAssets(assetsForDog(player));
@@ -389,6 +493,34 @@ function initSpriteEditor() {
   el.spriteEditorClose?.addEventListener("click", closeSpriteEditor);
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeSpriteEditor();
+  });
+  el.assetTabs?.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const activeTab = tab.dataset.tab;
+      el.assetTabs.forEach((item) => item.classList.toggle("active", item === tab));
+      el.assetPanels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === activeTab));
+    });
+  });
+  el.assetBackgroundInput?.addEventListener("change", () => {
+    const file = el.assetBackgroundInput.files?.[0];
+    readImageFile(file, (dataUrl) => {
+      el.assetBackgroundPreview.dataset.assetImage = dataUrl;
+      el.assetBackgroundPreview.style.backgroundImage = `url("${dataUrl}")`;
+    });
+  });
+  el.assetExportBtn?.addEventListener("click", () => {
+    if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
+  });
+  el.assetImportBtn?.addEventListener("click", () => {
+    try {
+      const config = JSON.parse(el.assetConfigText?.value || "{}");
+      saveAssetConfig(config);
+      loadSpriteEditorUI();
+      sprites.player.setAssets(assetsForDog(currentDog()));
+      sprites.enemy.setAssets(assetsForDog(enemyDog()));
+    } catch {
+      if (el.assetConfigText) el.assetConfigText.value = "JSON 格式错误，请检查后再导入。";
+    }
   });
 
   // 文件上传
@@ -965,7 +1097,7 @@ function playDogAction(side, action, duration = 360) {
   sprites[side]?.play(mappedAction, { lock: duration });
 }
 
-const FX_GLYPHS = ["汪", "BARK!", "WOOF!", "艹", "@", "#", "!", "*", "!!"];
+const DEFAULT_FX_GLYPHS = DEFAULT_ASSET_CONFIG.effects.glyphs;
 
 function dogBurstPoint(side) {
   const dog = side === "player" ? el.playerDog : el.enemyDog;
@@ -979,6 +1111,9 @@ function dogBurstPoint(side) {
 
 function addWave(side, intensity = 0.5) {
   const strength = clamp(intensity, 0.25, 1);
+  const effects = getAssetConfig().effects;
+  const glyphs = effects.glyphs?.length ? effects.glyphs : DEFAULT_FX_GLYPHS;
+  const particleBoost = clamp(Number(effects.particleBoost) || 1, 0.5, 1.8);
   const point = dogBurstPoint(side);
   const group = document.createElement("div");
   group.className = `impact-burst ${side}-burst`;
@@ -989,6 +1124,7 @@ function addWave(side, intensity = 0.5) {
   group.style.setProperty("--wave-border", `${7 + strength * 8}px`);
   group.style.setProperty("--wave-opacity", `${0.74 + strength * 0.22}`);
   group.style.setProperty("--wave-scale", `${1.72 + strength * 1.1}`);
+  group.style.setProperty("--wave-color", side === "enemy" ? effects.enemyWaveColor : effects.waveColor);
   const waveCount = Math.round(3 + strength * 4);
   for (let index = 0; index < waveCount; index += 1) {
     const wave = document.createElement("span");
@@ -998,7 +1134,7 @@ function addWave(side, intensity = 0.5) {
     wave.style.setProperty("--oval", `${0.82 + Math.random() * 0.18}`);
     group.appendChild(wave);
   }
-  const particleCount = Math.round(7 + strength * 18);
+  const particleCount = Math.round((7 + strength * 18) * particleBoost);
   for (let index = 0; index < particleCount; index += 1) {
     const spark = document.createElement("span");
     const asGlyph = Math.random() < 0.72;
@@ -1006,7 +1142,7 @@ function addWave(side, intensity = 0.5) {
     const distance = 54 + Math.random() * (130 + strength * 190);
     const lift = -24 + Math.random() * 48;
     spark.className = asGlyph ? "impact-glyph" : index % 2 ? "impact-spark star" : "impact-spark bolt";
-    if (asGlyph) spark.textContent = FX_GLYPHS[Math.floor(Math.random() * FX_GLYPHS.length)];
+    if (asGlyph) spark.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
     spark.style.setProperty("--x", `${-18 + Math.random() * 36}px`);
     spark.style.setProperty("--y", `${-18 + Math.random() * 36}px`);
     spark.style.setProperty("--r", `${-80 + Math.random() * 160}deg`);
@@ -1609,6 +1745,7 @@ el.muteBtn.addEventListener("click", () => {
 });
 
 loadSave();
+applyAssetConfig();
 renderDogCards();
 showSelect();
 updateOnlineLobbyUI("选择创建或加入房间");

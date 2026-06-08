@@ -225,8 +225,47 @@ button {
   margin: -8px 0;
 }
 
-.sprite-slots {
+.asset-editor-tabs {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.asset-tab {
+  min-height: 38px;
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  background: #102410;
+  color: #a8d5a2;
+  font-weight: 900;
+}
+
+.asset-tab.active {
+  background: linear-gradient(180deg, #8be67f, #4caf50);
+  color: #102410;
+}
+
+.asset-tab-panel {
+  display: none;
+}
+
+.asset-tab-panel.active {
+  display: grid;
+}
+
+.editor-section-title {
+  display: grid;
+  gap: 3px;
+  color: #a8d5a2;
+}
+
+.editor-section-title span {
+  color: #7ab87a;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.sprite-slots {
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
@@ -310,6 +349,63 @@ button {
   text-align: center;
   border-radius: 8px;
   background: #0a150a;
+}
+
+.asset-upload-row,
+.asset-control-row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: center;
+  gap: 12px;
+  color: #a8d5a2;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.asset-upload-row input,
+.asset-control-row input {
+  min-height: 38px;
+  border: 1px solid #4caf50;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #0a150a;
+  color: #d7f2d2;
+}
+
+.asset-control-row input[type="color"] {
+  padding: 3px;
+}
+
+.asset-background-preview {
+  min-height: 170px;
+  border: 2px solid #4caf50;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(50, 132, 57, 0.08)),
+    url("./assets/backgrounds/backyard-arena-ai-clean_001.jpg") center / cover no-repeat;
+}
+
+#assetPanelBackground,
+#assetPanelEffects,
+#assetPanelData {
+  gap: 14px;
+}
+
+#assetConfigText {
+  min-height: 210px;
+  resize: vertical;
+  border: 1px solid #4caf50;
+  border-radius: 10px;
+  padding: 12px;
+  background: #071207;
+  color: #d7f2d2;
+  font: 700 12px/1.45 Consolas, monospace;
+}
+
+.asset-config-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .sprite-editor-actions {
@@ -1278,7 +1374,7 @@ button {
   top: calc(2% + var(--i) * 4% + var(--jitter));
   width: calc(126px + var(--i) * 44px + var(--wave-extra));
   height: calc(152px + var(--i) * 46px + var(--wave-extra));
-  border: var(--wave-border) solid rgba(255, 255, 255, 0.88);
+  border: var(--wave-border) solid var(--wave-color, var(--asset-wave-color, rgba(255, 255, 255, 0.88)));
   border-left: 0;
   border-radius: 47% 60% 54% 48% / 48% 57% 45% 52%;
   filter:
@@ -2462,7 +2558,7 @@ body {
 .arena {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(50, 132, 57, 0.08)),
-    url("./assets/backgrounds/backyard-arena-ai-clean_001.jpg") center / cover no-repeat !important;
+    url("./assets/backgrounds/backyard-arena-ai-clean_001.jpg") center / cover no-repeat;
 }
 
 .sun,
@@ -2533,7 +2629,7 @@ body {
   top: 0;
   width: calc(var(--wave-size) + var(--i) * 54px);
   height: calc((var(--wave-size) + var(--i) * 54px) * var(--oval));
-  border: var(--wave-border) solid rgba(255, 255, 255, 0.86);
+  border: var(--wave-border) solid var(--wave-color, var(--asset-wave-color, rgba(255, 255, 255, 0.86)));
   border-radius: 50%;
   transform-origin: 50% 50%;
   translate: -50% -50%;
@@ -2550,7 +2646,7 @@ body {
 }
 
 .enemy-burst .wide-wave {
-  border-color: rgba(255, 92, 72, 0.9);
+  border-color: var(--wave-color, var(--asset-enemy-wave-color, rgba(255, 92, 72, 0.9)));
 }
 
 .impact-spark,

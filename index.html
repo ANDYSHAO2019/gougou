@@ -78,7 +78,13 @@
               <button class="icon-btn" id="spriteEditorClose" type="button">✕</button>
             </header>
             <p class="sprite-editor-hint">上传图片替换默认角色。点击格子或拖拽图片到格子上。</p>
-            <div class="sprite-slots" id="spriteSlots">
+            <div class="asset-editor-tabs" role="tablist" aria-label="资源类型">
+              <button class="asset-tab active" type="button" data-tab="character">角色</button>
+              <button class="asset-tab" type="button" data-tab="background">背景</button>
+              <button class="asset-tab" type="button" data-tab="effects">特效</button>
+              <button class="asset-tab" type="button" data-tab="data">配置</button>
+            </div>
+            <div class="sprite-slots asset-tab-panel active" id="spriteSlots" data-panel="character">
               <label class="sprite-slot" data-state="happy">
                 <span class="slot-label">待机</span>
                 <img class="slot-preview" id="slotHappy" alt="待机" />
@@ -98,6 +104,50 @@
                 <button class="slot-clear" data-state="dead" type="button">✕</button>
               </label>
             </div>
+            <section class="asset-tab-panel" id="assetPanelBackground" data-panel="background">
+              <div class="editor-section-title">
+                <strong>战斗背景</strong>
+                <span>建议 16:9 横图，画面中心留给对战区域</span>
+              </div>
+              <label class="asset-upload-row">
+                <span>背景图</span>
+                <input id="assetBackgroundInput" type="file" accept="image/*" />
+              </label>
+              <div class="asset-background-preview" id="assetBackgroundPreview"></div>
+            </section>
+            <section class="asset-tab-panel" id="assetPanelEffects" data-panel="effects">
+              <div class="editor-section-title">
+                <strong>声波与文字粒子</strong>
+                <span>调整整体打击感，不改变战斗数值</span>
+              </div>
+              <label class="asset-control-row">
+                <span>玩家声波</span>
+                <input id="assetWaveColor" type="color" value="#ffffff" />
+              </label>
+              <label class="asset-control-row">
+                <span>对手声波</span>
+                <input id="assetEnemyWaveColor" type="color" value="#ff5c48" />
+              </label>
+              <label class="asset-control-row">
+                <span>文字粒子</span>
+                <input id="assetGlyphs" type="text" value="汪,BARK!,WOOF!,@,#,!,*" />
+              </label>
+              <label class="asset-control-row">
+                <span>粒子强度</span>
+                <input id="assetParticleBoost" type="range" min="0.5" max="1.8" step="0.1" value="1" />
+              </label>
+            </section>
+            <section class="asset-tab-panel" id="assetPanelData" data-panel="data">
+              <div class="editor-section-title">
+                <strong>配置导入导出</strong>
+                <span>导出的 JSON 可以当作美术版本备份</span>
+              </div>
+              <textarea id="assetConfigText" spellcheck="false"></textarea>
+              <div class="asset-config-actions">
+                <button class="secondary-action" id="assetExportBtn" type="button">导出到文本框</button>
+                <button class="secondary-action" id="assetImportBtn" type="button">从文本框导入</button>
+              </div>
+            </section>
             <div class="sprite-editor-actions">
               <button class="secondary-action" id="spriteResetBtn" type="button">恢复默认</button>
               <button class="primary-action" id="spriteSaveBtn" type="button">保存并应用</button>
