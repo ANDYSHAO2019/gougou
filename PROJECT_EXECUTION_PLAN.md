@@ -147,3 +147,10 @@ P2-3 capacity target:
 - [x] Uploading sprite frames reports immediate frame count and size.
 - [x] Browser validation confirms OK/Warn/Danger capacity states render correctly.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P2-4 editor battle preview target:
+- [x] Character editor includes a compact battle-scene preview.
+- [x] Preview reflects current dog sprite drafts and background draft.
+- [x] Preview battle button plays bark pose and real wave/glyph effect.
+- [x] Browser validation confirms preview updates after upload and effect preview creates particles.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

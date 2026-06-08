@@ -199,6 +199,11 @@ const el = {
   assetTabs: document.querySelectorAll(".asset-tab"),
   assetPanels: document.querySelectorAll(".asset-tab-panel"),
   assetDogSelect: document.querySelector("#assetDogSelect"),
+  assetBattlePreview: document.querySelector("#assetBattlePreview"),
+  assetPreviewStage: document.querySelector("#assetPreviewStage"),
+  assetPreviewPlayer: document.querySelector("#assetPreviewPlayer"),
+  assetPreviewEnemy: document.querySelector("#assetPreviewEnemy"),
+  assetPreviewBattleBtn: document.querySelector("#assetPreviewBattleBtn"),
   assetBackgroundInput: document.querySelector("#assetBackgroundInput"),
   assetBackgroundClear: document.querySelector("#assetBackgroundClear"),
   assetBackgroundPreview: document.querySelector("#assetBackgroundPreview"),
@@ -540,6 +545,48 @@ function previewAssetEffect(side) {
   );
 }
 
+function slotDraftAsset(state) {
+  const wrapper = document.querySelector(`.sprite-slot[data-state="${state}"]`);
+  const frames = JSON.parse(wrapper?.dataset.frames || "[]").filter(Boolean);
+  const mode = wrapper?.querySelector(".slot-mode")?.value || "single";
+  if (mode === "sequence" && frames.length > 1) {
+    return { frames, fps: Number(wrapper.dataset.fps) || 8, loop: wrapper.dataset.loop !== "0" };
+  }
+  return frames[0] || DEFAULT_DOG_ASSETS[state];
+}
+
+function updateAssetBattlePreview(action = "happy") {
+  if (!el.assetPreviewStage || !el.assetPreviewPlayer || !el.assetPreviewEnemy) return;
+  const background = el.assetBackgroundPreview?.dataset.assetImage || getAssetConfig().background.image;
+  el.assetPreviewStage.style.backgroundImage = background
+    ? `linear-gradient(180deg, rgba(255,255,255,0.06), rgba(50,132,57,0.08)), url("${background}")`
+    : "";
+  const playerAsset = slotDraftAsset(action);
+  const enemyAsset = assetsForDog(enemyDog()).happy;
+  el.assetPreviewPlayer.src = spriteAssetFrames(playerAsset)[0] || DEFAULT_DOG_ASSETS[action];
+  el.assetPreviewEnemy.src = spriteAssetFrames(enemyAsset)[0] || DEFAULT_DOG_ASSETS.happy;
+}
+
+function previewAssetBattle() {
+  if (!el.assetPreviewStage || !el.assetPreviewPlayer) return;
+  updateAssetBattlePreview("bark");
+  el.assetPreviewPlayer.classList.remove("bark");
+  void el.assetPreviewPlayer.offsetWidth;
+  el.assetPreviewPlayer.classList.add("bark");
+  const rect = el.assetPreviewStage.getBoundingClientRect();
+  createImpactBurst(
+    "player",
+    0.78,
+    { x: rect.width * 0.34, y: rect.height * 0.48 },
+    el.assetPreviewStage,
+    effectDraftFromEditor(),
+  );
+  window.setTimeout(() => {
+    el.assetPreviewPlayer.classList.remove("bark");
+    updateAssetBattlePreview("happy");
+  }, 460);
+}
+
 function getCustomSprites(dogId = "") {
   const config = getAssetConfig();
   return (dogId && config.dogs?.[dogId]) || config.sprites || {};
@@ -598,6 +645,7 @@ function loadSpriteEditorUI() {
   if (el.assetParticleBoost) el.assetParticleBoost.value = config.effects.particleBoost;
   if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(config, null, 2);
   updateAssetConfigSize(config);
+  updateAssetBattlePreview();
 }
 
 function openSpriteEditor() {
@@ -645,6 +693,7 @@ async function handleSpriteFileInput(state, files) {
   if (!imageFiles.length) return;
   const frames = await Promise.all(imageFiles.map(readImageFileAsDataUrl));
   renderSpriteSlot(state, frames.length > 1 ? { frames, fps: 8, loop: true } : frames[0], true);
+  updateAssetBattlePreview();
   const bytes = new Blob(frames).size;
   const info = assetCapacityInfo(bytes);
   setAssetConfigStatus(`Loaded ${frames.length} frame${frames.length > 1 ? "s" : ""}: ${formatBytes(bytes)} · ${info.label}`, info.risk === "danger" ? "warn" : info.risk);
@@ -727,13 +776,16 @@ function initSpriteEditor() {
     const file = el.assetBackgroundInput.files?.[0];
     readImageFile(file, (dataUrl) => {
       setBackgroundDraft(dataUrl);
+      updateAssetBattlePreview();
     });
   });
   el.assetBackgroundClear?.addEventListener("click", () => {
     setBackgroundDraft("");
+    updateAssetBattlePreview();
   });
   el.assetPreviewPlayerFx?.addEventListener("click", () => previewAssetEffect("player"));
   el.assetPreviewEnemyFx?.addEventListener("click", () => previewAssetEffect("enemy"));
+  el.assetPreviewBattleBtn?.addEventListener("click", previewAssetBattle);
   el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {
     if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
@@ -777,12 +829,14 @@ function initSpriteEditor() {
       } else if (meta) {
         meta.textContent = `${frames.length || 1} frame${frames.length > 1 ? "s" : ""}`;
       }
+      updateAssetBattlePreview();
     });
 
     // 清除按钮
     const clearBtn = modal.querySelector(`.slot-clear[data-state="${state}"]`);
     clearBtn?.addEventListener("click", () => {
       renderSpriteSlot(state, DEFAULT_DOG_ASSETS[state], false);
+      updateAssetBattlePreview();
       const input2 = modal.querySelector(`.slot-input[data-state="${state}"]`);
       if (input2) input2.value = "";
     });

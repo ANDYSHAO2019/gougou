@@ -370,6 +370,50 @@ button {
   background: #0a150a;
 }
 
+.asset-battle-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.asset-preview-stage {
+  position: relative;
+  min-height: 210px;
+  overflow: hidden;
+  border: 2px solid #4caf50;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(50, 132, 57, 0.08)),
+    url("./assets/backgrounds/backyard-arena-ai-clean_001.jpg") center / cover no-repeat;
+}
+
+.asset-preview-dog {
+  position: absolute;
+  bottom: 14px;
+  width: min(28%, 150px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.25));
+}
+
+.asset-preview-player {
+  left: 11%;
+}
+
+.asset-preview-enemy {
+  right: 11%;
+  transform: scaleX(-1);
+}
+
+.asset-preview-player.bark {
+  animation: assetPreviewBark 0.42s ease;
+}
+
+@keyframes assetPreviewBark {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.14); }
+}
+
 .asset-dog-row,
 .asset-upload-row,
 .asset-control-row {
