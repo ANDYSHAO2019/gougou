@@ -377,27 +377,42 @@ function applyAssets(custom) {
 function loadAssetEditorUI() {
   const custom = getCustomAssets();
 
+  // 图片 key → 实际默认路径（DEFAULT_ASSETS 里图片都是 null，要手动映射）
+  const defaultImages = {
+    arenaBg: "./assets/backgrounds/backyard-arena-ai-clean_001.jpg",
+    happy:   DEFAULT_DOG_ASSETS.happy,
+    bark:    DEFAULT_DOG_ASSETS.bark,
+    dead:    DEFAULT_DOG_ASSETS.dead,
+  };
+
   for (const key of Object.keys(DEFAULT_ASSETS)) {
     const preview = document.getElementById(`preview-${key}`);
-    const item   = document.querySelector(`.asset-item[data-key="${key}"]`);
+    const item    = document.querySelector(`.asset-item[data-key="${key}"]`);
     if (!preview || !item) continue;
 
-    const val = custom[key] || DEFAULT_ASSETS[key];
-    const isColor = typeof val === "string" && val.startsWith("#");
+    // 颜色用 picker，图片用 src
+    const isColor = DEFAULT_ASSETS[key] && typeof DEFAULT_ASSETS[key] === "string" && DEFAULT_ASSETS[key].startsWith("#");
+    const customVal = custom[key];
+    const defVal    = isColor ? DEFAULT_ASSETS[key] : (defaultImages[key] || null);
+    const val       = customVal || defVal;
 
     if (isColor) {
-      preview.value = val;
-      item.classList.toggle("has-value", !DEFAULT_ASSETS[key] || custom[key]);
+      preview.value = val || defVal;
+      // 有自定义值 → has-value；无自定义但不是初始默认值 → has-value
+      const isModified = customVal && customVal !== DEFAULT_ASSETS[key];
+      item.classList.toggle("has-value", isModified);
     } else if (val) {
       preview.src = val;
-      item.classList.add("has-value");
+      preview.style.display = "block";
+      const isModified = customVal && customVal !== defVal;
+      item.classList.toggle("has-value", isModified);
     } else {
-      preview.src = "";
+      // 既无自定义也无默认值 → 隐藏预览
+      if (preview.tagName === "IMG") { preview.src = ""; preview.style.display = "none"; }
       item.classList.remove("has-value");
     }
   }
 }
-
 function openAssetEditor() {
   loadAssetEditorUI();
   el.assetEditorModal?.classList.remove("hidden");
@@ -422,22 +437,34 @@ function handleAssetFileInput(key, file) {
 
 function saveAssetEditor() {
   const custom = getCustomAssets();
-  const keys = Object.keys(DEFAULT_ASSETS);
 
-  for (const key of keys) {
+  // 图片 key → 实际默认路径
+  const defaultImages = {
+    arenaBg: "./assets/backgrounds/backyard-arena-ai-clean_001.jpg",
+    happy:   DEFAULT_DOG_ASSETS.happy,
+    bark:    DEFAULT_DOG_ASSETS.bark,
+    dead:    DEFAULT_DOG_ASSETS.dead,
+  };
+
+  for (const key of Object.keys(DEFAULT_ASSETS)) {
     const preview = document.getElementById(`preview-${key}`);
     if (!preview) continue;
 
-    if (preview.type === "color") {
+    const isColorDef = DEFAULT_ASSETS[key] && typeof DEFAULT_ASSETS[key] === "string" && DEFAULT_ASSETS[key].startsWith("#");
+    const colorInput = preview.type === "color" ? preview : preview.querySelector("input[type=color]");
+
+    if (isColorDef && colorInput) {
       const def = DEFAULT_ASSETS[key];
-      custom[key] = preview.value !== def ? preview.value : undefined;
+      custom[key] = colorInput.value !== def ? colorInput.value : undefined;
     } else {
       // 图片
-      const val = preview.src;
-      const def = DEFAULT_ASSETS[key];
-      if (val && (val.startsWith("data:") || (def && val !== def))) {
+      const val = preview.src || "";
+      const def = defaultImages[key] || "";
+      if (val && val.startsWith("data:")) {
         custom[key] = val;
-      } else if (!val || val === "") {
+      } else if (val && val !== def) {
+        custom[key] = val;
+      } else {
         delete custom[key];
       }
     }
