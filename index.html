@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>汪汪大作战</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="汪汪大作战">
+      <section class="arena" id="arena">
+        <div class="sky"></div>
+        <div class="sun"></div>
+        <div class="cloud cloud-a"></div>
+        <div class="cloud cloud-b"></div>
+        <div class="fence"></div>
+        <div class="yard-toys">
+          <span class="ball"></span>
+          <span class="bone"></span>
+        </div>
+
+        <section class="select-screen" id="selectScreen">
+          <header class="select-top">
+            <strong id="selectTitle">选择你的狗</strong>
+            <span id="wpText">WP 0</span>
+          </header>
+          <div class="dog-cards" id="dogCards"></div>
+          <section class="online-panel" id="onlinePanel">
+            <div class="mode-tabs" role="group" aria-label="对战模式">
+              <button class="mode-tab active" id="aiModeBtn" type="button">AI 对战</button>
+              <button class="mode-tab" id="onlineModeBtn" type="button">联网对战</button>
+            </div>
+            <div class="online-box hidden" id="onlineBox">
+              <div class="online-actions">
+                <button class="secondary-action" id="hostOnlineBtn" type="button">创建房间</button>
+                <button class="secondary-action" id="joinOnlineBtn" type="button">加入房间</button>
+                <span id="onlineStatus">未连接</span>
+              </div>
+              <div class="signal-grid">
+                <label>
+                  我的连接码
+                  <textarea id="localSignal" readonly placeholder="创建或加入后生成"></textarea>
+                </label>
+                <label>
+                  对方连接码
+                  <textarea id="remoteSignal" placeholder="粘贴对方发来的连接码"></textarea>
+                </label>
+              </div>
+              <div class="online-actions">
+                <button class="secondary-action" id="copySignalBtn" type="button">复制我的码</button>
+                <button class="secondary-action" id="acceptSignalBtn" type="button">确认对方码</button>
+              </div>
+            </div>
+          </section>
+          <button class="primary-action start-selected" id="confirmDogBtn" type="button">开始对战</button>
+        </section>
+
+        <section class="battle-screen" id="battleScreen">
+          <header class="battle-hud">
+            <div class="dog-name player-name" id="playerName">← 柴犬</div>
+            <div class="push-bar" aria-label="胜负推线条">
+              <div class="push-side push-player" id="pushPlayer"></div>
+              <div class="push-side push-enemy" id="pushEnemy"></div>
+              <div class="push-center"></div>
+              <div class="push-marker" id="pushMarker"></div>
+            </div>
+            <div class="dog-name enemy-name" id="enemyName">吉娃娃 →</div>
+            <div class="round-status compact-status">
+              <span id="timer">30</span>
+              <small id="roundLabel">READY</small>
+            </div>
+          </header>
+
+          <div class="combo" id="combo">COMBO x1</div>
+          <div class="danger-label" id="dangerLabel">危险</div>
+          <div class="bark-callout" id="barkCallout">叫!</div>
+          <div class="ko-panel" id="koPanel" aria-live="polite">
+            <div class="ko-card">
+              <strong id="koTitle">K.O. WIN!!</strong>
+              <span id="koReward">+150 WP</span>
+              <button id="nextBtn" type="button">下一场</button>
+            </div>
+          </div>
+          <div class="fx-layer" id="fxLayer"></div>
+
+          <section class="stage">
+            <article class="dog fighter player" id="playerDog" aria-label="玩家小狗">
+              <img class="sprite-frame" id="playerSprite" alt="" />
+              <div class="ear left-ear"></div>
+              <div class="ear right-ear"></div>
+              <div class="head">
+                <span class="eye left-eye"></span>
+                <span class="eye right-eye"></span>
+                <span class="nose"></span>
+                <span class="mouth"></span>
+              </div>
+              <div class="body">
+                <span class="tail"></span>
+                <span class="paw paw-a"></span>
+                <span class="paw paw-b"></span>
+              </div>
+            </article>
+
+            <div class="platform">
+              <div class="countdown" id="countdown">点击开始</div>
+            </div>
+
+            <article class="dog fighter enemy" id="enemyDog" aria-label="AI 小狗">
+              <img class="sprite-frame" id="enemySprite" alt="" />
+              <div class="ear left-ear"></div>
+              <div class="ear right-ear"></div>
+              <div class="head">
+                <span class="eye left-eye"></span>
+                <span class="eye right-eye"></span>
+                <span class="nose"></span>
+                <span class="mouth"></span>
+              </div>
+              <div class="body">
+                <span class="tail"></span>
+                <span class="paw paw-a"></span>
+                <span class="paw paw-b"></span>
+              </div>
+            </article>
+          </section>
+
+          <footer class="controls">
+            <button class="primary-action" id="startBtn" type="button">开始对战</button>
+            <button class="icon-action" id="muteBtn" type="button" aria-label="静音切换" title="静音切换">♪</button>
+            <div class="mic-panel">
+              <span class="mic-icon">MIC</span>
+              <div class="meter-track">
+                <div class="meter-fill" id="micMeter"></div>
+              </div>
+              <span id="micLabel">等待麦克风</span>
+              <span class="bark-stats" id="barkStats">0/0</span>
+            </div>
+          </footer>
+        </section>
+      </section>
+    </main>
+    <script src="./game.js"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+# Local backups and generated analysis files
+backups/
+analysis/
+
+# Local tunnel/runtime logs
+*.log
+public-tunnel*.log
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dependency folders, if tools are added later
+node_modules/

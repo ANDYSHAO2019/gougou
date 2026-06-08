@@ -1,0 +1,79 @@
+{
+  "actions": {
+    "idle": {
+      "fps": 6,
+      "loop": true,
+      "frames": [
+        "idle_000.png",
+        "idle_001.png",
+        "idle_002.png",
+        "idle_003.png",
+        "idle_004.png",
+        "idle_003.png",
+        "idle_002.png",
+        "idle_001.png"
+      ]
+    },
+    "attack": {
+      "fps": 12,
+      "loop": false,
+      "frames": [
+        "attack_000.png",
+        "attack_001.png",
+        "attack_002.png",
+        "attack_003.png",
+        "attack_004.png",
+        "attack_005.png"
+      ]
+    },
+    "hit": {
+      "fps": 12,
+      "loop": false,
+      "frames": [
+        "hit_000.png",
+        "hit_001.png",
+        "hit_002.png",
+        "hit_003.png",
+        "hit_004.png",
+        "hit_005.png"
+      ]
+    },
+    "tired": {
+      "fps": 6,
+      "loop": true,
+      "frames": [
+        "tired_000.png",
+        "tired_001.png",
+        "tired_002.png",
+        "tired_003.png",
+        "tired_002.png",
+        "tired_001.png"
+      ]
+    },
+    "win": {
+      "fps": 9,
+      "loop": true,
+      "frames": [
+        "win_000.png",
+        "win_001.png",
+        "win_002.png",
+        "win_003.png",
+        "win_004.png",
+        "win_005.png"
+      ]
+    },
+    "lose": {
+      "fps": 8,
+      "loop": false,
+      "hold": true,
+      "frames": [
+        "lose_000.png",
+        "lose_001.png",
+        "lose_002.png",
+        "lose_003.png",
+        "lose_004.png",
+        "lose_005.png"
+      ]
+    }
+  }
+}
