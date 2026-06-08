@@ -175,3 +175,11 @@ P3-3 online asset E2E target:
 - [x] Guest receives host custom sprite through real WebSocket relay.
 - [x] Guest lobby shows synced host asset pack hash/size.
 - [x] Host and guest can leave the room cleanly after the test.
+
+P3-4 cloud deployment target:
+- [x] Remote server files backed up before deploy.
+- [x] Latest `index.html`, `styles.css`, `game.js`, and `server/server.js` copied to cloud server.
+- [x] Node room server restarted on the cloud server.
+- [x] Public `/health` endpoint responds OK after deploy.
+- [x] Public page loads with latest asset sync UI and editor battle preview.
+- [x] `DEPLOY.md` documents current cloud deployment path and steps.
