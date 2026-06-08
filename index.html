@@ -84,7 +84,12 @@
               <button class="asset-tab" type="button" data-tab="effects">特效</button>
               <button class="asset-tab" type="button" data-tab="data">配置</button>
             </div>
-            <div class="sprite-slots asset-tab-panel active" id="spriteSlots" data-panel="character">
+            <div class="asset-tab-panel active" id="assetPanelCharacter" data-panel="character">
+              <label class="asset-dog-row">
+                <span>狗狗类型</span>
+                <select id="assetDogSelect"></select>
+              </label>
+              <div class="sprite-slots" id="spriteSlots">
               <label class="sprite-slot" data-state="happy">
                 <span class="slot-label">待机</span>
                 <img class="slot-preview" id="slotHappy" alt="待机" />
@@ -103,6 +108,7 @@
                 <input class="slot-input" type="file" accept="image/*" data-state="dead" />
                 <button class="slot-clear" data-state="dead" type="button">✕</button>
               </label>
+              </div>
             </div>
             <section class="asset-tab-panel" id="assetPanelBackground" data-panel="background">
               <div class="editor-section-title">

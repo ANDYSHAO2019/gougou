@@ -351,6 +351,7 @@ button {
   background: #0a150a;
 }
 
+.asset-dog-row,
 .asset-upload-row,
 .asset-control-row {
   display: grid;
@@ -362,6 +363,7 @@ button {
   font-weight: 900;
 }
 
+.asset-dog-row select,
 .asset-upload-row input,
 .asset-control-row input {
   min-height: 38px;

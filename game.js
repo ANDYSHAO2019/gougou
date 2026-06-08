@@ -198,6 +198,7 @@ const el = {
   spriteResetBtn: document.querySelector("#spriteResetBtn"),
   assetTabs: document.querySelectorAll(".asset-tab"),
   assetPanels: document.querySelectorAll(".asset-tab-panel"),
+  assetDogSelect: document.querySelector("#assetDogSelect"),
   assetBackgroundInput: document.querySelector("#assetBackgroundInput"),
   assetBackgroundPreview: document.querySelector("#assetBackgroundPreview"),
   assetWaveColor: document.querySelector("#assetWaveColor"),
@@ -304,6 +305,7 @@ const SPRITE_EDITOR_KEY = "barkBattleCustomSprites";
 const ASSET_CONFIG_KEY = "barkBattleAssetConfigV1";
 const DEFAULT_ASSET_CONFIG = {
   sprites: {},
+  dogs: {},
   background: {
     image: "",
   },
@@ -325,6 +327,7 @@ function normalizeAssetConfig(config = {}) {
     ...base,
     ...config,
     sprites: { ...base.sprites, ...(config.sprites || {}) },
+    dogs: { ...base.dogs, ...(config.dogs || {}) },
     background: { ...base.background, ...(config.background || {}) },
     effects: { ...base.effects, ...(config.effects || {}) },
   };
@@ -378,18 +381,24 @@ function readImageFile(file, callback) {
   reader.readAsDataURL(file);
 }
 
-function getCustomSprites() {
-  return getAssetConfig().sprites || {};
+function getCustomSprites(dogId = "") {
+  const config = getAssetConfig();
+  return (dogId && config.dogs?.[dogId]) || config.sprites || {};
 }
 
-function saveCustomSprites(map) {
+function saveCustomSprites(map, dogId = "") {
   const config = getAssetConfig();
-  config.sprites = map || {};
+  if (dogId) {
+    config.dogs ||= {};
+    config.dogs[dogId] = map || {};
+  } else {
+    config.sprites = map || {};
+  }
   saveAssetConfig(config);
 }
 
 function assetsForDog(dog) {
-  const custom = getCustomSprites();
+  const custom = getCustomSprites(dog?.id);
   // 优先用 localStorage 自定义图片，没有则用默认
   return {
     happy: custom.happy || DEFAULT_DOG_ASSETS.happy,
@@ -399,9 +408,25 @@ function assetsForDog(dog) {
 }
 
 // 加载当前自定义精灵到编辑器 UI
+function editorDogId() {
+  return el.assetDogSelect?.value || game.selectedDogId || DOGS[0].id;
+}
+
+function editorDog() {
+  return DOGS.find((dog) => dog.id === editorDogId()) || currentDog();
+}
+
+function populateAssetDogSelect() {
+  if (!el.assetDogSelect) return;
+  const previous = el.assetDogSelect.value || game.selectedDogId;
+  el.assetDogSelect.innerHTML = DOGS.map((dog) => `<option value="${dog.id}">${dog.name}</option>`).join("");
+  el.assetDogSelect.value = DOGS.some((dog) => dog.id === previous) ? previous : game.selectedDogId;
+}
+
 function loadSpriteEditorUI() {
   const config = getAssetConfig();
-  const custom = config.sprites || {};
+  populateAssetDogSelect();
+  const custom = getCustomSprites(editorDogId());
   for (const state of ["happy", "bark", "dead"]) {
     const slot  = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
     const stateData = custom[state];
@@ -458,7 +483,8 @@ function saveSpriteEditor() {
       }
     }
   }
-  config.sprites = custom;
+  config.dogs ||= {};
+  config.dogs[editorDogId()] = custom;
   config.background.image = el.assetBackgroundPreview?.dataset.assetImage || config.background.image || "";
   config.effects.waveColor = el.assetWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.waveColor;
   config.effects.enemyWaveColor = el.assetEnemyWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.enemyWaveColor;
@@ -508,6 +534,7 @@ function initSpriteEditor() {
       el.assetBackgroundPreview.style.backgroundImage = `url("${dataUrl}")`;
     });
   });
+  el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {
     if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
   });
