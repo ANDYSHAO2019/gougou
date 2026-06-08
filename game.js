@@ -984,6 +984,25 @@ function roomSocketUrl() {
   return ROOM_SERVER_URL;
 }
 
+function roomInviteUrl(roomId = game.online.roomId) {
+  const url = new URL(location.href);
+  url.searchParams.set("room", roomId);
+  return url.toString();
+}
+
+function updateRoomUrl(roomId = game.online.roomId) {
+  if (!roomId || !history.replaceState) return;
+  history.replaceState(null, "", roomInviteUrl(roomId));
+}
+
+function applyRoomFromUrl() {
+  const roomId = new URLSearchParams(location.search).get("room");
+  if (!roomId) return;
+  setMode("online");
+  if (el.roomCode) el.roomCode.value = roomId.trim();
+  updateOnlineLobbyUI("已填入邀请房间号，点击加入房间");
+}
+
 function sendRoomCommand(type, payload = {}) {
   const socket = game.online.socket;
   if (!socket || socket.readyState !== WebSocket.OPEN) return false;
@@ -1045,6 +1064,7 @@ function handleRoomMessage(message) {
     game.online.localReady = false;
     game.online.remoteReady = false;
     if (el.roomCode) el.roomCode.value = game.online.roomId;
+    updateRoomUrl(game.online.roomId);
     setOnlineStatus(type === "created" ? "等待朋友加入" : "已连接，可以进入对战");
     updateOnlineLobbyUI(type === "created" ? "房间已创建，复制邀请给朋友" : "已连接，可以进入战斗场地");
     if (type === "joined") {
@@ -2162,8 +2182,8 @@ el.copySignalBtn?.addEventListener("click", async () => {
     return;
   }
   try {
-    await navigator.clipboard.writeText(roomId);
-    setOnlineStatus("已复制房间号");
+    await navigator.clipboard.writeText(roomInviteUrl(roomId));
+    setOnlineStatus("已复制邀请链接");
   } catch {
     el.roomCode?.select();
     setOnlineStatus("请手动复制房间号");
@@ -2184,6 +2204,7 @@ applyAssetConfig();
 renderDogCards();
 showSelect();
 updateOnlineLobbyUI("选择创建或加入房间");
+applyRoomFromUrl();
 initSpriteEditor();
 loadSpriteAssets();
 preloadGameAssets();

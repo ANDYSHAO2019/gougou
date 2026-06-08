@@ -184,6 +184,13 @@ P3-4 cloud deployment target:
 - [x] Public page loads with latest asset sync UI and editor battle preview.
 - [x] `DEPLOY.md` documents current cloud deployment path and steps.
 
+P3-5 invite link target:
+- [x] Room creation/join updates the page URL with `?room=ROOM_ID`.
+- [x] Copy invite button copies the full invite link instead of only the room id.
+- [x] Opening a URL with `?room=` switches to online mode and fills the room code.
+- [x] Browser validation confirms URL fill and invite-link copy value.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
 P4-1 PWA target:
 - [x] App includes `manifest.webmanifest`.
 - [x] App registers a conservative network-first service worker.
