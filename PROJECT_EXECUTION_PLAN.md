@@ -127,3 +127,10 @@ P2-1 完成：
 - 配置增加 `schemaVersion: 1`。
 - 保存时写入 `updatedAt`。
 - 配置页显示当前 JSON 大小和风险提示。
+
+P2-2A runtime target:
+- [x] Sprite assets support existing single-frame string values.
+- [x] Sprite assets support sequence-frame objects: `{ "frames": [], "fps": 8, "loop": true }`.
+- [x] Runtime preloading includes every frame in sequence assets.
+- [x] Browser validation confirms custom sequence frames animate in the dog sprite.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

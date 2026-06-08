@@ -258,7 +258,7 @@ async function preloadGameAssets() {
   for (const dog of DOGS) {
     dogImages.add(dog.portrait);
     const assets = assetsForDog(dog);
-    Object.values(assets).forEach((src) => dogImages.add(src));
+    Object.values(assets).forEach((asset) => collectSpriteAssetImages(asset, dogImages));
   }
   await Promise.allSettled([
     preloadImage("./assets/backgrounds/backyard-arena-ai-clean_001.jpg"),
@@ -268,12 +268,25 @@ async function preloadGameAssets() {
   ]);
 }
 
+function collectSpriteAssetImages(asset, bucket) {
+  if (!asset) return;
+  if (typeof asset === "string") {
+    bucket.add(asset);
+    return;
+  }
+  if (Array.isArray(asset.frames)) {
+    asset.frames.filter(Boolean).forEach((src) => bucket.add(src));
+  }
+}
+
 class StaticDogSprite {
   constructor({ dog, image, assets }) {
     this.dog = dog;
     this.image = image;
     this.assets = assets;
     this.returnTimer = 0;
+    this.frameTimer = 0;
+    this.frameIndex = 0;
   }
 
   load() {
@@ -287,12 +300,34 @@ class StaticDogSprite {
   }
 
   play(action, { lock = 0 } = {}) {
-    const src = this.assets[action] || this.assets.happy;
-    if (!src) return;
+    const asset = this.assets[action] || this.assets.happy;
+    if (!asset) return;
     window.clearTimeout(this.returnTimer);
-    this.image.src = src;
+    window.clearInterval(this.frameTimer);
     this.dog.classList.remove("happy", "bark", "dead", "hit", "tired");
     this.dog.classList.add(action);
+    if (typeof asset === "string") {
+      this.image.src = asset;
+    } else if (Array.isArray(asset.frames) && asset.frames.length) {
+      const frames = asset.frames.filter(Boolean);
+      const frameMs = Math.max(50, Math.round(1000 / (Number(asset.fps) || 8)));
+      this.frameIndex = 0;
+      this.image.src = frames[0];
+      if (frames.length > 1) {
+        this.frameTimer = window.setInterval(() => {
+          this.frameIndex += 1;
+          if (this.frameIndex >= frames.length) {
+            if (asset.loop) {
+              this.frameIndex = 0;
+            } else {
+              this.frameIndex = frames.length - 1;
+              window.clearInterval(this.frameTimer);
+            }
+          }
+          this.image.src = frames[this.frameIndex];
+        }, frameMs);
+      }
+    }
     if (lock && action !== "dead") {
       this.returnTimer = window.setTimeout(() => {
         this.play("happy");
