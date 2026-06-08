@@ -109,6 +109,7 @@ button {
 
 .battle-stats-panel {
   display: grid;
+  grid-template-columns: 1fr auto;
   gap: 4px;
   padding: 10px 12px;
   border: 3px solid rgba(255, 255, 255, 0.9);
@@ -125,6 +126,21 @@ button {
 .battle-stats-panel small {
   color: #8a6742;
   font-weight: 800;
+}
+
+.stats-reset-btn {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #e4f6ff);
+  color: #70452b;
+  font-size: 0.74rem;
+  font-weight: 900;
+  box-shadow: 0 3px 0 rgba(126, 81, 37, 0.12);
 }
 
 .dog-cards {

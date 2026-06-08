@@ -198,3 +198,10 @@ P4-2 local battle stats target:
 - [x] End-game settlement records result and reward into stats.
 - [x] Browser validation confirms win/lose/draw stats persist and render.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P4-3 local stats reset target:
+- [x] Select screen includes a local stats reset button.
+- [x] Reset asks for confirmation before clearing stats.
+- [x] Reset clears stats while keeping WP, unlocks, and selected dog.
+- [x] Browser validation confirms cancel/confirm reset behavior.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

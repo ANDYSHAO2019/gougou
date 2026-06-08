@@ -157,6 +157,7 @@ const el = {
   selectTitle: document.querySelector("#selectTitle"),
   battleStatsSummary: document.querySelector("#battleStatsSummary"),
   battleStatsRecent: document.querySelector("#battleStatsRecent"),
+  resetStatsBtn: document.querySelector("#resetStatsBtn"),
   confirmDogBtn: document.querySelector("#confirmDogBtn"),
   aiModeBtn: document.querySelector("#aiModeBtn"),
   onlineModeBtn: document.querySelector("#onlineModeBtn"),
@@ -1239,6 +1240,13 @@ function recordBattleResult(result, reward) {
   game.stats.recent = game.stats.recent.slice(0, 5);
 }
 
+function resetBattleStats() {
+  if (!window.confirm("Reset local battle stats? WP and unlocked dogs will stay.")) return;
+  game.stats = normalizeBattleStats();
+  saveGame();
+  renderBattleStats();
+}
+
 function loadSave() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -2129,6 +2137,7 @@ function showKo(title, reward) {
 el.confirmDogBtn.addEventListener("click", showBattle);
 el.startBtn.addEventListener("click", startGame);
 el.nextBtn.addEventListener("click", showSelect);
+el.resetStatsBtn?.addEventListener("click", resetBattleStats);
 el.aiModeBtn?.addEventListener("click", () => setMode("ai"));
 el.onlineModeBtn?.addEventListener("click", () => setMode("online"));
 el.hostOnlineBtn?.addEventListener("click", async () => {
@@ -2161,7 +2170,7 @@ el.copySignalBtn?.addEventListener("click", async () => {
   }
 });
 el.onlineEnterBtn?.addEventListener("click", enterOnlineBattle);
-[el.confirmDogBtn, el.startBtn, el.nextBtn, el.muteBtn, el.aiModeBtn, el.onlineModeBtn, el.hostOnlineBtn, el.joinOnlineBtn, el.copySignalBtn, el.leaveOnlineBtn, el.onlineEnterBtn].forEach((button) => {
+[el.confirmDogBtn, el.startBtn, el.nextBtn, el.resetStatsBtn, el.muteBtn, el.aiModeBtn, el.onlineModeBtn, el.hostOnlineBtn, el.joinOnlineBtn, el.copySignalBtn, el.leaveOnlineBtn, el.onlineEnterBtn].forEach((button) => {
   button?.addEventListener("pointerdown", playUiClick);
 });
 
