@@ -163,6 +163,172 @@ button {
   width: 220px;
 }
 
+.select-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+/* ── 角色编辑器弹窗 ─────────────────────────────── */
+.sprite-editor-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.sprite-editor-modal.hidden {
+  display: none;
+}
+
+.sprite-editor-panel {
+  background: #1a2e1a;
+  border: 2px solid #4caf50;
+  border-radius: 16px;
+  padding: 24px;
+  width: min(520px, 96vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+.sprite-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #a8d5a2;
+  font-size: 1.15rem;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #a8d5a2;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.icon-btn:hover { background: rgba(168,213,162,0.15); }
+
+.sprite-editor-hint {
+  color: #7ab87a;
+  font-size: 0.82rem;
+  margin: -8px 0;
+}
+
+.sprite-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sprite-slot {
+  position: relative;
+  border: 2px dashed #4caf50;
+  border-radius: 12px;
+  padding: 10px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+  min-height: 160px;
+  background: #0d1f0d;
+}
+
+.sprite-slot:hover,
+.sprite-slot.drag-over {
+  border-color: #8fcc8f;
+  background: #152515;
+}
+
+.sprite-slot.has-image {
+  border-style: solid;
+}
+
+.slot-label {
+  font-size: 0.78rem;
+  color: #7ab87a;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.slot-preview {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #0a150a;
+  /* 默认占位狗图标 */
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.slot-input {
+  display: none;
+}
+
+.slot-clear {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255,80,80,0.85);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  line-height: 20px;
+  text-align: center;
+  padding: 0;
+  display: none;
+}
+
+.sprite-slot.has-image .slot-clear {
+  display: block;
+}
+
+.slot-placeholder {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3a5a3a;
+  font-size: 0.75rem;
+  text-align: center;
+  border-radius: 8px;
+  background: #0a150a;
+}
+
+.sprite-editor-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.sprite-editor-actions .secondary-action {
+  background: #2a3f2a;
+  color: #a8d5a2;
+  border: 1px solid #4caf50;
+  flex: 0 0 auto;
+}
+
+.sprite-editor-actions .primary-action {
+  flex: 1;
+}
+
 .select-screen.online-select {
   grid-template-rows: auto minmax(190px, auto) auto;
   gap: 12px;

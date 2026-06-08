@@ -191,6 +191,11 @@ const el = {
   koPanel: document.querySelector("#koPanel"),
   koTitle: document.querySelector("#koTitle"),
   koReward: document.querySelector("#koReward"),
+  spriteEditorModal: document.querySelector("#spriteEditorModal"),
+  spriteEditorBtn: document.querySelector("#spriteEditorBtn"),
+  spriteEditorClose: document.querySelector("#spriteEditorClose"),
+  spriteSaveBtn: document.querySelector("#spriteSaveBtn"),
+  spriteResetBtn: document.querySelector("#spriteResetBtn"),
 };
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -281,7 +286,146 @@ const DEFAULT_DOG_ASSETS = {
   dead: "./assets/dogs/player/lose_005.png",
 };
 
-const assetsForDog = (dog) => dog.assets || DEFAULT_DOG_ASSETS;
+// ── 角色精灵编辑器 ─────────────────────────────────────────
+const SPRITE_EDITOR_KEY = "barkBattleCustomSprites";
+
+function getCustomSprites() {
+  try {
+    return JSON.parse(localStorage.getItem(SPRITE_EDITOR_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveCustomSprites(map) {
+  localStorage.setItem(SPRITE_EDITOR_KEY, JSON.stringify(map));
+}
+
+function assetsForDog(dog) {
+  const custom = getCustomSprites();
+  // 优先用 localStorage 自定义图片，没有则用默认
+  return {
+    happy: custom.happy || DEFAULT_DOG_ASSETS.happy,
+    bark:  custom.bark  || DEFAULT_DOG_ASSETS.bark,
+    dead:  custom.dead  || DEFAULT_DOG_ASSETS.dead,
+  };
+}
+
+// 加载当前自定义精灵到编辑器 UI
+function loadSpriteEditorUI() {
+  const custom = getCustomSprites();
+  for (const state of ["happy", "bark", "dead"]) {
+    const slot  = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
+    const stateData = custom[state];
+    const wrapper = slot.closest(".sprite-slot");
+    if (stateData) {
+      slot.src = stateData;
+      wrapper.classList.add("has-image");
+    } else {
+      slot.src = DEFAULT_DOG_ASSETS[state];
+      wrapper.classList.remove("has-image");
+    }
+  }
+}
+
+function openSpriteEditor() {
+  loadSpriteEditorUI();
+  el.spriteEditorModal?.classList.remove("hidden");
+}
+
+function closeSpriteEditor() {
+  el.spriteEditorModal?.classList.add("hidden");
+}
+
+// 将用户选择的文件转为 base64，写入对应 slot
+function handleSpriteFileInput(state, file) {
+  if (!file || !file.type.startsWith("image/")) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const slot = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
+    slot.src = dataUrl;
+    slot.closest(".sprite-slot").classList.add("has-image");
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveSpriteEditor() {
+  const custom = {};
+  for (const state of ["happy", "bark", "dead"]) {
+    const slot = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
+    if (slot.src && !slot.src.includes(DEFAULT_DOG_ASSETS[state])) {
+      // 只保存用户自定义的（非默认路径）
+      const isDefault = Object.entries(DEFAULT_DOG_ASSETS).every(
+        ([k, v]) => k === state || !slot.src.includes(v)
+      );
+      if (!isDefault || slot.src.startsWith("data:")) {
+        custom[state] = slot.src;
+      }
+    }
+  }
+  saveCustomSprites(custom);
+  // 立刻刷新当前角色的精灵
+  const player = currentDog();
+  sprites.player.setAssets(assetsForDog(player));
+  const enemy = enemyDog();
+  sprites.enemy.setAssets(assetsForDog(enemy));
+  closeSpriteEditor();
+}
+
+function resetSpriteEditor() {
+  localStorage.removeItem(SPRITE_EDITOR_KEY);
+  loadSpriteEditorUI();
+  const player = currentDog();
+  sprites.player.setAssets(assetsForDog(player));
+  const enemy = enemyDog();
+  sprites.enemy.setAssets(assetsForDog(enemy));
+}
+
+// ── 初始化 sprite editor 事件 ────────────────────────────
+function initSpriteEditor() {
+  const modal = el.spriteEditorModal;
+  if (!modal) return;
+
+  // 关闭按钮
+  el.spriteEditorClose?.addEventListener("click", closeSpriteEditor);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeSpriteEditor();
+  });
+
+  // 文件上传
+  for (const state of ["happy", "bark", "dead"]) {
+    const input = modal.querySelector(`.slot-input[data-state="${state}"]`);
+    input?.addEventListener("change", () => {
+      if (input.files[0]) handleSpriteFileInput(state, input.files[0]);
+    });
+
+    // 清除按钮
+    const clearBtn = modal.querySelector(`.slot-clear[data-state="${state}"]`);
+    clearBtn?.addEventListener("click", () => {
+      const slot = document.getElementById(`slot${state.charAt(0).toUpperCase() + state.slice(1)}`);
+      slot.src = DEFAULT_DOG_ASSETS[state];
+      slot.closest(".sprite-slot").classList.remove("has-image");
+      const input2 = modal.querySelector(`.slot-input[data-state="${state}"]`);
+      if (input2) input2.value = "";
+    });
+
+    // 拖拽支持
+    const slotEl = modal.querySelector(`.sprite-slot[data-state="${state}"]`);
+    slotEl?.addEventListener("dragover", (e) => { e.preventDefault(); slotEl.classList.add("drag-over"); });
+    slotEl?.addEventListener("dragleave", () => slotEl.classList.remove("drag-over"));
+    slotEl?.addEventListener("drop", (e) => {
+      e.preventDefault();
+      slotEl.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file) handleSpriteFileInput(state, file);
+    });
+  }
+
+  el.spriteEditorBtn?.addEventListener("click", openSpriteEditor);
+  el.spriteSaveBtn?.addEventListener("click", saveSpriteEditor);
+  el.spriteResetBtn?.addEventListener("click", resetSpriteEditor);
+}
+
+// 主初始化入口末尾调用 initSpriteEditor()
 
 const sprites = {
   player: new StaticDogSprite({
@@ -1468,6 +1612,7 @@ loadSave();
 renderDogCards();
 showSelect();
 updateOnlineLobbyUI("选择创建或加入房间");
+initSpriteEditor();
 loadSpriteAssets();
 preloadGameAssets();
 micLoop();

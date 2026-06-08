@@ -64,8 +64,46 @@
               </div>
             </div>
           </section>
-          <button class="primary-action start-selected" id="confirmDogBtn" type="button">开始对战</button>
+          <div class="select-actions">
+            <button class="secondary-action" id="spriteEditorBtn" type="button">编辑角色</button>
+            <button class="primary-action start-selected" id="confirmDogBtn" type="button">开始对战</button>
+          </div>
         </section>
+
+        <!-- 角色编辑器弹窗 -->
+        <div class="sprite-editor-modal hidden" id="spriteEditorModal">
+          <div class="sprite-editor-panel">
+            <header class="sprite-editor-header">
+              <strong>角色编辑器</strong>
+              <button class="icon-btn" id="spriteEditorClose" type="button">✕</button>
+            </header>
+            <p class="sprite-editor-hint">上传图片替换默认角色。点击格子或拖拽图片到格子上。</p>
+            <div class="sprite-slots" id="spriteSlots">
+              <label class="sprite-slot" data-state="happy">
+                <span class="slot-label">待机</span>
+                <img class="slot-preview" id="slotHappy" alt="待机" />
+                <input class="slot-input" type="file" accept="image/*" data-state="happy" />
+                <button class="slot-clear" data-state="happy" type="button">✕</button>
+              </label>
+              <label class="sprite-slot" data-state="bark">
+                <span class="slot-label">攻击</span>
+                <img class="slot-preview" id="slotBark" alt="攻击" />
+                <input class="slot-input" type="file" accept="image/*" data-state="bark" />
+                <button class="slot-clear" data-state="bark" type="button">✕</button>
+              </label>
+              <label class="sprite-slot" data-state="dead">
+                <span class="slot-label">死亡</span>
+                <img class="slot-preview" id="slotDead" alt="死亡" />
+                <input class="slot-input" type="file" accept="image/*" data-state="dead" />
+                <button class="slot-clear" data-state="dead" type="button">✕</button>
+              </label>
+            </div>
+            <div class="sprite-editor-actions">
+              <button class="secondary-action" id="spriteResetBtn" type="button">恢复默认</button>
+              <button class="primary-action" id="spriteSaveBtn" type="button">保存并应用</button>
+            </div>
+          </div>
+        </div>
 
         <section class="battle-screen" id="battleScreen">
           <header class="battle-hud">
