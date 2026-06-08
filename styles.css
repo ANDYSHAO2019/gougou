@@ -438,6 +438,20 @@ button {
   gap: 10px;
 }
 
+.asset-config-status {
+  min-height: 20px;
+  color: #a8d5a2;
+  font-size: 0.82rem;
+}
+
+.asset-config-status[data-kind="error"] {
+  color: #ff9f9f;
+}
+
+.asset-config-status[data-kind="ok"] {
+  color: #8be67f;
+}
+
 .sprite-editor-actions {
   display: flex;
   gap: 10px;

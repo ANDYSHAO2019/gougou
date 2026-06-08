@@ -211,7 +211,9 @@ const el = {
   assetEffectPreview: document.querySelector("#assetEffectPreview"),
   assetConfigText: document.querySelector("#assetConfigText"),
   assetExportBtn: document.querySelector("#assetExportBtn"),
+  assetDownloadBtn: document.querySelector("#assetDownloadBtn"),
   assetImportBtn: document.querySelector("#assetImportBtn"),
+  assetConfigStatus: document.querySelector("#assetConfigStatus"),
 };
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -361,6 +363,26 @@ function saveAssetConfig(config) {
   const normalized = normalizeAssetConfig(config);
   localStorage.setItem(ASSET_CONFIG_KEY, JSON.stringify(normalized));
   applyAssetConfig(normalized);
+}
+
+function setAssetConfigStatus(message, kind = "info") {
+  if (!el.assetConfigStatus) return;
+  el.assetConfigStatus.textContent = message;
+  el.assetConfigStatus.dataset.kind = kind;
+}
+
+function downloadAssetConfig() {
+  const text = JSON.stringify(getAssetConfig(), null, 2);
+  const blob = new Blob([text], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `gougou-assets-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setAssetConfigStatus("已下载 JSON 配置", "ok");
 }
 
 function applyAssetConfig(config = getAssetConfig()) {
@@ -575,16 +597,20 @@ function initSpriteEditor() {
   el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {
     if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
+    setAssetConfigStatus("已导出到文本框", "ok");
   });
+  el.assetDownloadBtn?.addEventListener("click", downloadAssetConfig);
   el.assetImportBtn?.addEventListener("click", () => {
     try {
-      const config = JSON.parse(el.assetConfigText?.value || "{}");
+      const parsed = JSON.parse(el.assetConfigText?.value || "{}");
+      const config = normalizeAssetConfig(parsed);
       saveAssetConfig(config);
       loadSpriteEditorUI();
       sprites.player.setAssets(assetsForDog(currentDog()));
       sprites.enemy.setAssets(assetsForDog(enemyDog()));
+      setAssetConfigStatus("导入成功，已应用配置", "ok");
     } catch {
-      if (el.assetConfigText) el.assetConfigText.value = "JSON 格式错误，请检查后再导入。";
+      setAssetConfigStatus("JSON 格式错误，未覆盖当前配置", "error");
     }
   });
 
