@@ -189,4 +189,5 @@ P4-1 PWA target:
 - [x] App registers a conservative network-first service worker.
 - [x] Cloud server serves `.webmanifest` with manifest MIME type.
 - [x] Browser validation confirms manifest link and service worker file are reachable.
+- [x] Public deployment serves manifest/service worker correctly after deploy.
 - [x] `node --check game.js`, `node --check server/server.js`, and `node tools/smoke-test.js` pass.
