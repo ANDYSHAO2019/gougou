@@ -129,16 +129,14 @@ const game = {
     role: "",
     peer: null,
     channel: null,
+    socket: null,
     connected: false,
     localReady: false,
     remoteReady: false,
     roundStarting: false,
     remoteDogId: "golden",
     roomId: "",
-    signalSource: null,
     sessionId: "",
-    pendingCandidates: [],
-    signalChunks: {},
   },
 };
 
@@ -311,251 +309,128 @@ function setMode(mode) {
 }
 
 function closeOnlineConnection() {
-  game.online.channel?.close();
-  game.online.peer?.close?.();
-  game.online.signalSource?.close?.();
+  game.online.socket?.close?.();
   Object.assign(game.online, {
     role: "",
     peer: null,
     channel: null,
+    socket: null,
     connected: false,
     localReady: false,
     remoteReady: false,
     roundStarting: false,
     remoteDogId: "golden",
     roomId: "",
-    signalSource: null,
     sessionId: "",
-    pendingCandidates: [],
-    signalChunks: {},
   });
   setOnlineStatus("未连接");
 }
 
-function makeRoomId() {
-  if (window.crypto?.getRandomValues) {
-    const bytes = new Uint8Array(6);
-    window.crypto.getRandomValues(bytes);
-    return `gougou${Array.from(bytes, (byte) => byte.toString(36).padStart(2, "0")).join("").slice(0, 10)}`;
+const ROOM_SERVER_URL = "wss://gougou.8.220.135.31.sslip.io/ws";
+
+function roomSocketUrl() {
+  if (location.hostname === "gougou.8.220.135.31.sslip.io") {
+    return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
   }
-  return `gougou${Math.random().toString(36).slice(2, 12)}`;
+  return ROOM_SERVER_URL;
 }
 
-const SIGNAL_BASE = "https://ntfy.sh/";
-const SIGNAL_CHUNK_SIZE = 3000;
-const RTC_CONFIG = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
-
-function makeSessionId() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+function sendRoomCommand(type, payload = {}) {
+  const socket = game.online.socket;
+  if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+  socket.send(JSON.stringify({ type, payload, at: Date.now() }));
+  return true;
 }
 
-function signalUrl(roomId) {
-  return `${SIGNAL_BASE}${encodeURIComponent(roomId)}`;
-}
-
-async function publishSignal(type, payload = {}) {
-  if (!game.online.roomId || !game.online.sessionId) return;
-  const message = {
-    game: "gougou-battle",
-    type,
-    role: game.online.role,
-    sid: game.online.sessionId,
-    payload,
-    at: Date.now(),
-  };
-  const text = JSON.stringify(message);
-  if (text.length <= SIGNAL_CHUNK_SIZE) {
-    await postSignalText(text);
-    return;
-  }
-  const chunkId = makeSessionId();
-  const total = Math.ceil(text.length / SIGNAL_CHUNK_SIZE);
-  for (let index = 0; index < total; index += 1) {
-    await postSignalText(JSON.stringify({
-      game: "gougou-battle-chunk",
-      sid: game.online.sessionId,
-      chunkId,
-      index,
-      total,
-      text: text.slice(index * SIGNAL_CHUNK_SIZE, (index + 1) * SIGNAL_CHUNK_SIZE),
-      at: Date.now(),
-    }));
-  }
-}
-
-async function postSignalText(text) {
-  await fetch(signalUrl(game.online.roomId), {
-    method: "POST",
-    body: text,
-  });
-}
-
-function openSignal(roomId) {
-  game.online.signalSource?.close?.();
-  const source = new EventSource(`${signalUrl(roomId)}/sse`);
-  game.online.signalSource = source;
-  source.addEventListener("message", (event) => {
-    try {
-      const envelope = JSON.parse(event.data);
-      if (envelope.event !== "message" || !envelope.message) return;
-      const message = JSON.parse(envelope.message);
-      if (message.sid === game.online.sessionId) return;
-      if (message.game === "gougou-battle-chunk") {
-        handleSignalChunk(message);
-        return;
-      }
-      if (message.game !== "gougou-battle") return;
-      handleSignalMessage(message);
-    } catch {
-      setOnlineStatus("信令消息无效");
-    }
-  });
-  source.addEventListener("error", () => {
-    if (!game.online.connected) setOnlineStatus("房间信令重连中");
-  });
-}
-
-function handleSignalChunk(chunk) {
-  const key = `${chunk.sid}:${chunk.chunkId}`;
-  const bucket = game.online.signalChunks[key] || {
-    total: chunk.total,
-    parts: [],
-    received: 0,
-    at: Date.now(),
-  };
-  if (!bucket.parts[chunk.index]) {
-    bucket.parts[chunk.index] = chunk.text;
-    bucket.received += 1;
-  }
-  game.online.signalChunks[key] = bucket;
-  if (bucket.received < bucket.total) return;
-  delete game.online.signalChunks[key];
-  const message = JSON.parse(bucket.parts.join(""));
-  if (message.game === "gougou-battle" && message.sid !== game.online.sessionId) {
-    handleSignalMessage(message);
-  }
-}
-
-async function addRemoteCandidate(candidate) {
-  if (!candidate || !game.online.peer) return;
-  if (!game.online.peer.remoteDescription) {
-    game.online.pendingCandidates.push(candidate);
-    return;
-  }
-  try {
-    await game.online.peer.addIceCandidate(candidate);
-  } catch {
-    setOnlineStatus("网络候选失败");
-  }
-}
-
-async function flushRemoteCandidates() {
-  const candidates = game.online.pendingCandidates.splice(0);
-  for (const candidate of candidates) {
-    await addRemoteCandidate(candidate);
-  }
-}
-
-async function handleSignalMessage(message) {
-  const peer = game.online.peer;
-  if (!peer) return;
+function handleRoomMessage(message) {
   const { type, payload = {} } = message;
-  if (type === "offer" && game.online.role === "host") {
-    await peer.setRemoteDescription(payload.sdp);
-    await flushRemoteCandidates();
-    await peer.setLocalDescription(await peer.createAnswer());
-    await publishSignal("answer", { sdp: peer.localDescription });
-    setOnlineStatus("朋友加入中");
-    return;
-  }
-  if (type === "answer" && game.online.role === "guest") {
-    await peer.setRemoteDescription(payload.sdp);
-    await flushRemoteCandidates();
-    setOnlineStatus("等待直连完成");
-    return;
-  }
-  if (type === "candidate") {
-    await addRemoteCandidate(payload.candidate);
-  }
-}
-
-function createOnlinePeer(role) {
-  closeOnlineConnection();
-  const peer = new RTCPeerConnection(RTC_CONFIG);
-  game.online.peer = peer;
-  game.online.role = role;
-  peer.addEventListener("icecandidate", (event) => {
-    if (event.candidate) publishSignal("candidate", { candidate: event.candidate }).catch(() => {});
-  });
-  peer.addEventListener("connectionstatechange", () => {
-    const state = peer.connectionState;
-    if (state === "connected") setOnlineStatus("已连接");
-    if (state === "failed" || state === "disconnected" || state === "closed") {
-      game.online.connected = false;
-      setOnlineStatus("连接中断");
+  if (type === "connected") return;
+  if (type === "created" || type === "joined") {
+    game.online.role = payload.role || game.online.role;
+    game.online.roomId = payload.roomId || game.online.roomId;
+    game.online.connected = type === "joined";
+    if (el.roomCode) el.roomCode.value = game.online.roomId;
+    setOnlineStatus(type === "created" ? "等待朋友加入" : "已连接，可以进入对战");
+    if (type === "joined") {
+      sendOnlineMessage("hello", { dogId: game.selectedDogId, name: currentDog().name });
     }
-  });
-  peer.addEventListener("datachannel", (event) => setupOnlineChannel(event.channel));
-  return peer;
-}
-
-function setupOnlineChannel(channel) {
-  game.online.channel = channel;
-  channel.addEventListener("open", () => {
+    return;
+  }
+  if (type === "peer-joined") {
     game.online.connected = true;
     setOnlineStatus("已连接，可以进入对战");
     sendOnlineMessage("hello", { dogId: game.selectedDogId, name: currentDog().name });
-  });
-  channel.addEventListener("close", () => {
+    return;
+  }
+  if (type === "peer-left" || type === "room-expired") {
     game.online.connected = false;
-    setOnlineStatus("连接关闭");
-  });
-  channel.addEventListener("error", () => {
-    game.online.connected = false;
-    setOnlineStatus("连接失败");
-  });
-  channel.addEventListener("message", (event) => {
-    try {
-      handleOnlineMessage(JSON.parse(event.data));
-    } catch {
-      setOnlineStatus("收到无效消息");
-    }
+    setOnlineStatus(payload.message || "对方已离开");
+    return;
+  }
+  if (type === "room") {
+    const peers = payload.players || [];
+    const remote = peers.find((player) => player.role !== game.online.role);
+    if (remote?.dogId) game.online.remoteDogId = remote.dogId;
+    return;
+  }
+  if (type === "relay") {
+    handleOnlineMessage({ type: payload.type, payload: payload.payload || {} });
+    return;
+  }
+  if (type === "error") {
+    setOnlineStatus(payload.message || "联网失败");
+  }
+}
+
+function connectRoomServer() {
+  return new Promise((resolve, reject) => {
+    closeOnlineConnection();
+    const socket = new WebSocket(roomSocketUrl());
+    game.online.socket = socket;
+    const timer = window.setTimeout(() => {
+      reject(new Error("连接服务器超时"));
+      socket.close();
+    }, 10000);
+    socket.addEventListener("open", () => {
+      window.clearTimeout(timer);
+      resolve(socket);
+    }, { once: true });
+    socket.addEventListener("message", (event) => {
+      try {
+        handleRoomMessage(JSON.parse(event.data));
+      } catch {
+        setOnlineStatus("服务器消息无效");
+      }
+    });
+    socket.addEventListener("close", () => {
+      game.online.connected = false;
+      setOnlineStatus("服务器连接关闭");
+    });
+    socket.addEventListener("error", () => {
+      setOnlineStatus("服务器连接失败");
+    });
   });
 }
 
 function sendOnlineMessage(type, payload = {}) {
-  const channel = game.online.channel;
-  if (!channel || channel.readyState !== "open") return false;
-  channel.send(JSON.stringify({ type, payload, at: Date.now() }));
-  return true;
+  return sendRoomCommand(type, payload);
 }
 
 async function createOnlineRoom() {
   setMode("online");
-  const roomId = makeRoomId();
-  createOnlinePeer("host");
-  game.online.roomId = roomId;
-  game.online.sessionId = makeSessionId();
-  openSignal(roomId);
-  if (el.roomCode) el.roomCode.value = roomId;
-  setOnlineStatus("等待朋友加入");
+  setOnlineStatus("连接服务器中");
+  await connectRoomServer();
+  sendRoomCommand("create", { dogId: game.selectedDogId });
 }
 
 async function joinOnlineRoom() {
   setMode("online");
   const roomId = el.roomCode?.value.trim();
   if (!roomId) throw new Error("请输入房间号");
-  const peer = createOnlinePeer("guest");
-  game.online.roomId = roomId;
-  game.online.sessionId = makeSessionId();
-  openSignal(roomId);
+  setOnlineStatus("连接服务器中");
+  await connectRoomServer();
   setOnlineStatus("加入房间中");
-  setupOnlineChannel(peer.createDataChannel("bark-battle"));
-  await peer.setLocalDescription(await peer.createOffer());
-  await publishSignal("offer", { sdp: peer.localDescription });
-  window.setTimeout(() => {
-    if (!game.online.connected) setOnlineStatus("连接较慢，请确认房主页面未关闭");
-  }, 16000);
+  sendRoomCommand("join", { roomId, dogId: game.selectedDogId });
 }
 
 function handleOnlineMessage(message) {
