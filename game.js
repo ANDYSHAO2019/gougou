@@ -74,6 +74,9 @@ const BALANCE = {
   barkMinGap: 180,
   barkMinPeak: 0.34,
   barkMinAverage: 0.2,
+  sustainMinDuration: 420,
+  sustainPulseGap: 520,
+  sustainMinLevel: 0.5,
   barkMaxInstantRise: 0.78,
   barkLongReject: 900,
   calibrationAmbientMs: 900,
@@ -117,6 +120,7 @@ const game = {
     previousLevel: 0,
     lowFrames: 0,
     lastAcceptedAt: 0,
+    lastSustainAt: 0,
     rejectedUntilQuiet: false,
     rejection: "",
     rejectionUntil: 0,
@@ -777,6 +781,7 @@ function resetGame() {
   game.barkDetector.previousLevel = 0;
   game.barkDetector.rejectedUntilQuiet = false;
   game.barkDetector.rejectionUntil = 0;
+  game.barkDetector.lastSustainAt = 0;
   el.playerDog.className = "dog fighter player";
   el.enemyDog.className = "dog fighter enemy";
   el.playerDog.style.setProperty("--dog-shift", "0px");
@@ -1145,6 +1150,24 @@ function analyzeBarkSegment(now) {
   return { accepted: true, power, duration, peak, average };
 }
 
+function acceptSustainedBark(now, level) {
+  const detector = game.barkDetector;
+  detector.lastAcceptedAt = now;
+  detector.lastSustainAt = now;
+  game.barkStats.accepted += 1;
+  updateBarkStats();
+  const power = clamp(0.28 + level * 0.42 + detector.peak * 0.2, 0.34, 0.82);
+  Object.assign(detector, {
+    active: true,
+    startAt: now,
+    peak: level,
+    sum: level,
+    samples: 1,
+    lowFrames: 0,
+  });
+  return { accepted: true, sustained: true, power };
+}
+
 function detectBark(level, now) {
   const detector = game.barkDetector;
   const threshold = BALANCE.barkThreshold / currentDog().tolerance;
@@ -1173,6 +1196,16 @@ function detectBark(level, now) {
   detector.samples += 1;
 
   const duration = now - detector.startAt;
+  const sustainLevel = Math.max(BALANCE.sustainMinLevel, threshold + 0.16);
+  if (
+    duration >= BALANCE.sustainMinDuration &&
+    detector.peak >= sustainLevel &&
+    level >= BALANCE.barkEndThreshold &&
+    now - detector.lastSustainAt >= BALANCE.sustainPulseGap
+  ) {
+    return acceptSustainedBark(now, level);
+  }
+
   if (duration > BALANCE.barkLongReject) {
     detector.rejectedUntilQuiet = true;
     return rejectBark("拖太长了", 900);
@@ -1238,6 +1271,7 @@ async function calibrateBarkInput() {
   resetBarkSegment();
   game.barkDetector.previousLevel = 0;
   game.barkDetector.rejectionUntil = 0;
+  game.barkDetector.lastSustainAt = 0;
   updateMicFeedback(0, false, false);
   el.micMeter.style.width = "0%";
   el.countdown.textContent = "";
@@ -1257,7 +1291,7 @@ function micLoop() {
     updateMicFeedback(level, listening || isBark, tired);
     el.playerDog.classList.toggle("tired", tired);
     if (isBark) playerAttack(tired ? result.power * BALANCE.tiredPenalty : result.power);
-    el.micLabel.textContent = tired ? "喘口气" : isBark ? "有效汪汪" : "听候汪汪";
+    el.micLabel.textContent = tired ? "喘口气" : result.sustained ? "持续压制" : isBark ? "有效汪汪" : "听候汪汪";
     if (!tired && result.rejected) el.micLabel.textContent = result.reason;
     if (!tired && !isBark && listening) el.micLabel.textContent = "识别中";
   } else {
