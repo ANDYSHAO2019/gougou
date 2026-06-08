@@ -162,6 +162,12 @@ button {
   width: 220px;
 }
 
+.online-enter {
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 8px;
+}
+
 .online-panel {
   display: grid;
   gap: 10px;

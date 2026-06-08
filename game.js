@@ -151,6 +151,7 @@ const el = {
   hostOnlineBtn: document.querySelector("#hostOnlineBtn"),
   joinOnlineBtn: document.querySelector("#joinOnlineBtn"),
   copySignalBtn: document.querySelector("#copySignalBtn"),
+  onlineEnterBtn: document.querySelector("#onlineEnterBtn"),
   roomCode: document.querySelector("#roomCode"),
   onlineStatus: document.querySelector("#onlineStatus"),
   wpText: document.querySelector("#wpText"),
@@ -287,6 +288,14 @@ const sprites = {
 
 function setOnlineStatus(text) {
   if (el.onlineStatus) el.onlineStatus.textContent = text;
+}
+
+function enterOnlineBattle() {
+  if (!game.online.connected) {
+    setOnlineStatus("请先创建或加入房间");
+    return;
+  }
+  showBattle();
 }
 
 function setMode(mode) {
@@ -490,7 +499,7 @@ function setupOnlineChannel(channel) {
   game.online.channel = channel;
   channel.addEventListener("open", () => {
     game.online.connected = true;
-    setOnlineStatus("已连接");
+    setOnlineStatus("已连接，可以进入对战");
     sendOnlineMessage("hello", { dogId: game.selectedDogId, name: currentDog().name });
   });
   channel.addEventListener("close", () => {
@@ -705,7 +714,8 @@ function showSelect() {
 
 function showBattle() {
   if (game.mode === "online" && !game.online.connected) {
-    setOnlineStatus("未连接也可先进入，开局前需连接");
+    setOnlineStatus("请先创建或加入房间");
+    return;
   }
   el.selectScreen.classList.add("hidden");
   el.battleScreen.classList.remove("hidden");
@@ -1457,7 +1467,8 @@ el.copySignalBtn?.addEventListener("click", async () => {
     setOnlineStatus("请手动复制房间号");
   }
 });
-[el.confirmDogBtn, el.startBtn, el.nextBtn, el.muteBtn, el.aiModeBtn, el.onlineModeBtn, el.hostOnlineBtn, el.joinOnlineBtn, el.copySignalBtn].forEach((button) => {
+el.onlineEnterBtn?.addEventListener("click", enterOnlineBattle);
+[el.confirmDogBtn, el.startBtn, el.nextBtn, el.muteBtn, el.aiModeBtn, el.onlineModeBtn, el.hostOnlineBtn, el.joinOnlineBtn, el.copySignalBtn, el.onlineEnterBtn].forEach((button) => {
   button?.addEventListener("pointerdown", playUiClick);
 });
 
