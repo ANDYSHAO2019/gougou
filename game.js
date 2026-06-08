@@ -454,14 +454,6 @@ function assetCapacityInfo(bytes) {
 function updateAssetConfigSize(config = getAssetConfig()) {
   if (!el.assetConfigSize) return;
   const bytes = new Blob([JSON.stringify(config)]).size;
-  const risk = bytes > 4 * 1024 * 1024 ? " · 偏大，建议压缩图片" : bytes > 2 * 1024 * 1024 ? " · 接近上限" : "";
-  el.assetConfigSize.textContent = `当前配置大小：${formatBytes(bytes)}${risk}`;
-  el.assetConfigSize.dataset.risk = bytes > 2 * 1024 * 1024 ? "warn" : "ok";
-}
-
-function updateAssetConfigSize(config = getAssetConfig()) {
-  if (!el.assetConfigSize) return;
-  const bytes = new Blob([JSON.stringify(config)]).size;
   const info = assetCapacityInfo(bytes);
   el.assetConfigSize.textContent = `Config size: ${formatBytes(bytes)} · ${info.label}`;
   el.assetConfigSize.dataset.risk = info.risk;
