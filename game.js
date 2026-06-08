@@ -214,6 +214,7 @@ const el = {
   assetDownloadBtn: document.querySelector("#assetDownloadBtn"),
   assetImportBtn: document.querySelector("#assetImportBtn"),
   assetConfigStatus: document.querySelector("#assetConfigStatus"),
+  assetConfigSize: document.querySelector("#assetConfigSize"),
 };
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -310,6 +311,9 @@ const DEFAULT_DOG_ASSETS = {
 const SPRITE_EDITOR_KEY = "barkBattleCustomSprites";
 const ASSET_CONFIG_KEY = "barkBattleAssetConfigV1";
 const DEFAULT_ASSET_CONFIG = {
+  kind: "gougou-asset-config",
+  schemaVersion: 1,
+  updatedAt: "",
   sprites: {},
   dogs: {},
   background: {
@@ -361,6 +365,7 @@ function getAssetConfig() {
 
 function saveAssetConfig(config) {
   const normalized = normalizeAssetConfig(config);
+  normalized.updatedAt = new Date().toISOString();
   localStorage.setItem(ASSET_CONFIG_KEY, JSON.stringify(normalized));
   applyAssetConfig(normalized);
 }
@@ -369,6 +374,20 @@ function setAssetConfigStatus(message, kind = "info") {
   if (!el.assetConfigStatus) return;
   el.assetConfigStatus.textContent = message;
   el.assetConfigStatus.dataset.kind = kind;
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function updateAssetConfigSize(config = getAssetConfig()) {
+  if (!el.assetConfigSize) return;
+  const bytes = new Blob([JSON.stringify(config)]).size;
+  const risk = bytes > 4 * 1024 * 1024 ? " · 偏大，建议压缩图片" : bytes > 2 * 1024 * 1024 ? " · 接近上限" : "";
+  el.assetConfigSize.textContent = `当前配置大小：${formatBytes(bytes)}${risk}`;
+  el.assetConfigSize.dataset.risk = bytes > 2 * 1024 * 1024 ? "warn" : "ok";
 }
 
 function downloadAssetConfig() {
@@ -504,6 +523,7 @@ function loadSpriteEditorUI() {
   if (el.assetGlyphs) el.assetGlyphs.value = config.effects.glyphs.join(",");
   if (el.assetParticleBoost) el.assetParticleBoost.value = config.effects.particleBoost;
   if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(config, null, 2);
+  updateAssetConfigSize(config);
 }
 
 function openSpriteEditor() {
@@ -547,6 +567,7 @@ function saveSpriteEditor() {
   config.effects.glyphs = (el.assetGlyphs?.value || "").split(",").map((item) => item.trim()).filter(Boolean);
   config.effects.particleBoost = Number(el.assetParticleBoost?.value || 1);
   saveAssetConfig(config);
+  updateAssetConfigSize(getAssetConfig());
   // 立刻刷新当前角色的精灵
   const player = currentDog();
   sprites.player.setAssets(assetsForDog(player));
@@ -560,6 +581,7 @@ function resetSpriteEditor() {
   localStorage.removeItem(SPRITE_EDITOR_KEY);
   applyAssetConfig(DEFAULT_ASSET_CONFIG);
   loadSpriteEditorUI();
+  updateAssetConfigSize(DEFAULT_ASSET_CONFIG);
   const player = currentDog();
   sprites.player.setAssets(assetsForDog(player));
   const enemy = enemyDog();
@@ -597,6 +619,7 @@ function initSpriteEditor() {
   el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {
     if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
+    updateAssetConfigSize();
     setAssetConfigStatus("已导出到文本框", "ok");
   });
   el.assetDownloadBtn?.addEventListener("click", downloadAssetConfig);
@@ -606,6 +629,7 @@ function initSpriteEditor() {
       const config = normalizeAssetConfig(parsed);
       saveAssetConfig(config);
       loadSpriteEditorUI();
+      updateAssetConfigSize(config);
       sprites.player.setAssets(assetsForDog(currentDog()));
       sprites.enemy.setAssets(assetsForDog(enemyDog()));
       setAssetConfigStatus("导入成功，已应用配置", "ok");

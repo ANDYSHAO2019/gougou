@@ -452,6 +452,16 @@ button {
   color: #8be67f;
 }
 
+.asset-config-size {
+  color: #7ab87a;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.asset-config-size[data-risk="warn"] {
+  color: #ffd27a;
+}
+
 .sprite-editor-actions {
   display: flex;
   gap: 10px;
