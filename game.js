@@ -107,6 +107,13 @@ const game = {
   wp: 0,
   winStreak: 0,
   unlocked: ["shiba"],
+  stats: {
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    bestStreak: 0,
+    recent: [],
+  },
   barkStats: {
     accepted: 0,
     rejected: 0,
@@ -148,6 +155,8 @@ const el = {
   battleScreen: document.querySelector("#battleScreen"),
   dogCards: document.querySelector("#dogCards"),
   selectTitle: document.querySelector("#selectTitle"),
+  battleStatsSummary: document.querySelector("#battleStatsSummary"),
+  battleStatsRecent: document.querySelector("#battleStatsRecent"),
   confirmDogBtn: document.querySelector("#confirmDogBtn"),
   aiModeBtn: document.querySelector("#aiModeBtn"),
   onlineModeBtn: document.querySelector("#onlineModeBtn"),
@@ -1194,6 +1203,42 @@ function applyRemoteAttack({ amount = 8, power = 0.5, critical = false } = {}) {
   if (critical || pushAmount >= 14) shakeArena(critical);
 }
 
+function normalizeBattleStats(stats = {}) {
+  return {
+    wins: Number(stats.wins) || 0,
+    losses: Number(stats.losses) || 0,
+    draws: Number(stats.draws) || 0,
+    bestStreak: Number(stats.bestStreak) || 0,
+    recent: Array.isArray(stats.recent) ? stats.recent.slice(0, 5) : [],
+  };
+}
+
+function renderBattleStats() {
+  if (!el.battleStatsSummary || !el.battleStatsRecent) return;
+  const stats = normalizeBattleStats(game.stats);
+  el.battleStatsSummary.textContent = `${stats.wins}W / ${stats.losses}L / ${stats.draws}D · Best ${stats.bestStreak}`;
+  el.battleStatsRecent.textContent = stats.recent.length
+    ? `Recent: ${stats.recent.map((item) => item.result.toUpperCase()).join(" · ")}`
+    : "No battles yet";
+}
+
+function recordBattleResult(result, reward) {
+  game.stats = normalizeBattleStats(game.stats);
+  if (result === "win") game.stats.wins += 1;
+  else if (result === "lose") game.stats.losses += 1;
+  else game.stats.draws += 1;
+  game.stats.bestStreak = Math.max(game.stats.bestStreak, game.winStreak);
+  game.stats.recent.unshift({
+    result,
+    mode: game.mode,
+    dogId: game.selectedDogId,
+    enemyDogId: game.enemyDogId,
+    reward,
+    at: Date.now(),
+  });
+  game.stats.recent = game.stats.recent.slice(0, 5);
+}
+
 function loadSave() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1204,9 +1249,11 @@ function loadSave() {
     game.unlocked = Array.isArray(save.unlocked) ? save.unlocked : ["shiba"];
     game.selectedDogId = save.selectedDogId || "shiba";
     game.matchIndex = Number(save.matchIndex) || 0;
+    game.stats = normalizeBattleStats(save.stats);
   } catch {
     game.wp = 0;
     game.unlocked = ["shiba"];
+    game.stats = normalizeBattleStats();
   }
 }
 
@@ -1219,6 +1266,7 @@ function saveGame() {
       unlocked: game.unlocked,
       selectedDogId: game.selectedDogId,
       matchIndex: game.matchIndex,
+      stats: normalizeBattleStats(game.stats),
     }),
   );
 }
@@ -1243,6 +1291,7 @@ function loadSpriteAssets() {
 function renderDogCards() {
   el.selectTitle.textContent = `选择你的狗 · 第 ${game.matchIndex + 1} 场${game.winStreak ? ` · 连胜 ${game.winStreak}` : ""}`;
   el.wpText.textContent = `WP ${game.wp}`;
+  renderBattleStats();
   el.dogCards.innerHTML = "";
   for (const dog of DOGS) {
     const unlocked = game.unlocked.includes(dog.id);
@@ -2048,6 +2097,7 @@ function endGame(result, notifyPeer = true) {
   const reward = rewardFor(result);
   game.wp += reward;
   game.matchIndex += 1;
+  recordBattleResult(result, reward);
   saveGame();
 
   if (result === "win") {

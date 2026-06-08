@@ -191,3 +191,10 @@ P4-1 PWA target:
 - [x] Browser validation confirms manifest link and service worker file are reachable.
 - [x] Public deployment serves manifest/service worker correctly after deploy.
 - [x] `node --check game.js`, `node --check server/server.js`, and `node tools/smoke-test.js` pass.
+
+P4-2 local battle stats target:
+- [x] Save data includes wins, losses, draws, best streak, and recent battle list.
+- [x] Select screen displays compact local battle stats.
+- [x] End-game settlement records result and reward into stats.
+- [x] Browser validation confirms win/lose/draw stats persist and render.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

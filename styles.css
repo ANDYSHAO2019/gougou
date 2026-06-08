@@ -107,6 +107,26 @@ button {
   animation: wp-pulse 360ms ease;
 }
 
+.battle-stats-panel {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  background: rgba(255, 251, 220, 0.76);
+  color: #70452b;
+  box-shadow: 0 5px 0 rgba(126, 81, 37, 0.12);
+}
+
+.battle-stats-panel strong {
+  font-size: 0.9rem;
+}
+
+.battle-stats-panel small {
+  color: #8a6742;
+  font-weight: 800;
+}
+
 .dog-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
