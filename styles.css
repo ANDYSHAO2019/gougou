@@ -209,13 +209,12 @@ button {
   font-weight: 900;
 }
 
-.signal-grid {
+.room-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.signal-grid label {
+.room-grid label {
   display: grid;
   gap: 5px;
   color: #654029;
@@ -223,16 +222,16 @@ button {
   font-weight: 900;
 }
 
-.signal-grid textarea {
+.room-grid input {
   width: 100%;
-  min-height: 76px;
-  resize: vertical;
+  min-height: 44px;
   border: 3px solid #ffffff;
   border-radius: 8px;
-  padding: 8px;
+  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.92);
   color: #26304a;
-  font: 12px/1.35 Consolas, monospace;
+  font: 900 16px/1.2 Consolas, monospace;
+  letter-spacing: 0;
 }
 
 .battle-screen {

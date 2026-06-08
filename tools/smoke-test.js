@@ -38,8 +38,7 @@ for (const id of [
   "onlineBox",
   "hostOnlineBtn",
   "joinOnlineBtn",
-  "localSignal",
-  "remoteSignal",
+  "roomCode",
 ]) {
   assert(html.includes(`id="${id}"`), `Missing DOM id: ${id}`);
 }

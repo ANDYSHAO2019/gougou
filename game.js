@@ -130,6 +130,7 @@ const game = {
     remoteReady: false,
     roundStarting: false,
     remoteDogId: "golden",
+    roomId: "",
   },
 };
 
@@ -146,9 +147,7 @@ const el = {
   hostOnlineBtn: document.querySelector("#hostOnlineBtn"),
   joinOnlineBtn: document.querySelector("#joinOnlineBtn"),
   copySignalBtn: document.querySelector("#copySignalBtn"),
-  acceptSignalBtn: document.querySelector("#acceptSignalBtn"),
-  localSignal: document.querySelector("#localSignal"),
-  remoteSignal: document.querySelector("#remoteSignal"),
+  roomCode: document.querySelector("#roomCode"),
   onlineStatus: document.querySelector("#onlineStatus"),
   wpText: document.querySelector("#wpText"),
   startBtn: document.querySelector("#startBtn"),
@@ -282,9 +281,6 @@ const sprites = {
   }),
 };
 
-const signalEncode = (payload) => btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-const signalDecode = (value) => JSON.parse(decodeURIComponent(escape(atob(value.trim()))));
-
 function setOnlineStatus(text) {
   if (el.onlineStatus) el.onlineStatus.textContent = text;
 }
@@ -299,7 +295,7 @@ function setMode(mode) {
 
 function closeOnlineConnection() {
   game.online.channel?.close();
-  game.online.peer?.close();
+  game.online.peer?.destroy?.();
   Object.assign(game.online, {
     role: "",
     peer: null,
@@ -309,57 +305,73 @@ function closeOnlineConnection() {
     remoteReady: false,
     roundStarting: false,
     remoteDogId: "golden",
+    roomId: "",
   });
   setOnlineStatus("未连接");
 }
 
-function waitForIceGathering(peer) {
-  if (peer.iceGatheringState === "complete") return Promise.resolve();
-  return new Promise((resolve) => {
-    const done = () => {
-      if (peer.iceGatheringState === "complete") {
-        peer.removeEventListener("icegatheringstatechange", done);
-        resolve();
-      }
-    };
-    peer.addEventListener("icegatheringstatechange", done);
-    window.setTimeout(resolve, 1600);
-  });
+function makeRoomId() {
+  return `gougou${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function createOnlinePeer(role) {
+function requirePeerJs() {
+  if (typeof Peer === "undefined") {
+    throw new Error("联网服务加载失败，请刷新页面");
+  }
+}
+
+function createOnlinePeer(role, id) {
   closeOnlineConnection();
-  const peer = new RTCPeerConnection({
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  requirePeerJs();
+  const peer = new Peer(id || undefined, {
+    host: "0.peerjs.com",
+    port: 443,
+    path: "/",
+    secure: true,
+    debug: 1,
   });
   game.online.peer = peer;
   game.online.role = role;
-  peer.addEventListener("connectionstatechange", () => {
-    const state = peer.connectionState;
-    if (state === "connected") setOnlineStatus("已连接");
-    if (state === "failed" || state === "disconnected" || state === "closed") {
-      game.online.connected = false;
-      setOnlineStatus("连接中断");
+  peer.on("connection", (connection) => {
+    if (game.online.channel && game.online.channel.open) {
+      connection.close();
+      return;
     }
+    setupOnlineChannel(connection);
   });
-  peer.addEventListener("datachannel", (event) => setupOnlineChannel(event.channel));
+  peer.on("disconnected", () => {
+    game.online.connected = false;
+    setOnlineStatus("连接中断");
+  });
+  peer.on("close", () => {
+    game.online.connected = false;
+    setOnlineStatus("连接关闭");
+  });
+  peer.on("error", (error) => {
+    game.online.connected = false;
+    setOnlineStatus(error?.type === "unavailable-id" ? "房间号已被占用" : "联网失败");
+  });
   return peer;
 }
 
 function setupOnlineChannel(channel) {
   game.online.channel = channel;
-  channel.addEventListener("open", () => {
+  channel.on("open", () => {
     game.online.connected = true;
     setOnlineStatus("已连接");
     sendOnlineMessage("hello", { dogId: game.selectedDogId, name: currentDog().name });
   });
-  channel.addEventListener("close", () => {
+  channel.on("close", () => {
     game.online.connected = false;
     setOnlineStatus("连接关闭");
   });
-  channel.addEventListener("message", (event) => {
+  channel.on("error", () => {
+    game.online.connected = false;
+    setOnlineStatus("连接失败");
+  });
+  channel.on("data", (data) => {
     try {
-      handleOnlineMessage(JSON.parse(event.data));
+      handleOnlineMessage(typeof data === "string" ? JSON.parse(data) : data);
     } catch {
       setOnlineStatus("收到无效消息");
     }
@@ -368,38 +380,58 @@ function setupOnlineChannel(channel) {
 
 function sendOnlineMessage(type, payload = {}) {
   const channel = game.online.channel;
-  if (!channel || channel.readyState !== "open") return false;
+  if (!channel || !channel.open) return false;
   channel.send(JSON.stringify({ type, payload, at: Date.now() }));
   return true;
 }
 
 async function createOnlineRoom() {
   setMode("online");
-  const peer = createOnlinePeer("host");
-  setupOnlineChannel(peer.createDataChannel("bark-battle"));
-  await peer.setLocalDescription(await peer.createOffer());
-  await waitForIceGathering(peer);
-  el.localSignal.value = signalEncode({ type: "offer", sdp: peer.localDescription });
-  setOnlineStatus("把我的连接码发给对方");
+  const roomId = makeRoomId();
+  const peer = createOnlinePeer("host", roomId);
+  setOnlineStatus("创建房间中");
+  await new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("创建超时，请重试")), 9000);
+    peer.on("open", (id) => {
+      window.clearTimeout(timer);
+      game.online.roomId = id;
+      if (el.roomCode) el.roomCode.value = id;
+      setOnlineStatus("等待朋友加入");
+      resolve(id);
+    });
+    peer.on("error", (error) => {
+      window.clearTimeout(timer);
+      reject(error);
+    });
+  });
 }
 
 async function joinOnlineRoom() {
   setMode("online");
-  const signal = signalDecode(el.remoteSignal.value);
-  if (signal.type !== "offer") throw new Error("请先粘贴房主连接码");
+  const roomId = el.roomCode?.value.trim();
+  if (!roomId) throw new Error("请输入房间号");
   const peer = createOnlinePeer("guest");
-  await peer.setRemoteDescription(signal.sdp);
-  await peer.setLocalDescription(await peer.createAnswer());
-  await waitForIceGathering(peer);
-  el.localSignal.value = signalEncode({ type: "answer", sdp: peer.localDescription });
-  setOnlineStatus("把我的连接码发回房主");
-}
-
-async function acceptOnlineAnswer() {
-  const signal = signalDecode(el.remoteSignal.value);
-  if (signal.type !== "answer") throw new Error("请粘贴加入者的应答码");
-  await game.online.peer.setRemoteDescription(signal.sdp);
-  setOnlineStatus("等待连接建立");
+  game.online.roomId = roomId;
+  setOnlineStatus("加入房间中");
+  await new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("连接超时，请检查房间号")), 12000);
+    peer.on("open", () => {
+      const connection = peer.connect(roomId, { reliable: true });
+      setupOnlineChannel(connection);
+      connection.on("open", () => {
+        window.clearTimeout(timer);
+        resolve();
+      });
+      connection.on("error", (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      });
+    });
+    peer.on("error", (error) => {
+      window.clearTimeout(timer);
+      reject(error);
+    });
+  });
 }
 
 function handleOnlineMessage(message) {
@@ -1300,23 +1332,21 @@ el.joinOnlineBtn?.addEventListener("click", async () => {
     setOnlineStatus(error.message);
   }
 });
-el.acceptSignalBtn?.addEventListener("click", async () => {
-  try {
-    await acceptOnlineAnswer();
-  } catch (error) {
-    setOnlineStatus(error.message);
-  }
-});
 el.copySignalBtn?.addEventListener("click", async () => {
+  const roomId = el.roomCode?.value.trim();
+  if (!roomId) {
+    setOnlineStatus("请先创建房间");
+    return;
+  }
   try {
-    await navigator.clipboard.writeText(el.localSignal.value);
-    setOnlineStatus("已复制连接码");
+    await navigator.clipboard.writeText(roomId);
+    setOnlineStatus("已复制房间号");
   } catch {
-    el.localSignal.select();
-    setOnlineStatus("请手动复制连接码");
+    el.roomCode?.select();
+    setOnlineStatus("请手动复制房间号");
   }
 });
-[el.confirmDogBtn, el.startBtn, el.nextBtn, el.muteBtn, el.aiModeBtn, el.onlineModeBtn, el.hostOnlineBtn, el.joinOnlineBtn, el.copySignalBtn, el.acceptSignalBtn].forEach((button) => {
+[el.confirmDogBtn, el.startBtn, el.nextBtn, el.muteBtn, el.aiModeBtn, el.onlineModeBtn, el.hostOnlineBtn, el.joinOnlineBtn, el.copySignalBtn].forEach((button) => {
   button?.addEventListener("pointerdown", playUiClick);
 });
 

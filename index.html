@@ -36,19 +36,14 @@
                 <button class="secondary-action" id="joinOnlineBtn" type="button">加入房间</button>
                 <span id="onlineStatus">未连接</span>
               </div>
-              <div class="signal-grid">
+              <div class="room-grid">
                 <label>
-                  我的连接码
-                  <textarea id="localSignal" readonly placeholder="创建或加入后生成"></textarea>
-                </label>
-                <label>
-                  对方连接码
-                  <textarea id="remoteSignal" placeholder="粘贴对方发来的连接码"></textarea>
+                  房间号
+                  <input id="roomCode" autocomplete="off" inputmode="text" placeholder="房主创建后复制给朋友" />
                 </label>
               </div>
               <div class="online-actions">
-                <button class="secondary-action" id="copySignalBtn" type="button">复制我的码</button>
-                <button class="secondary-action" id="acceptSignalBtn" type="button">确认对方码</button>
+                <button class="secondary-action" id="copySignalBtn" type="button">复制房间号</button>
               </div>
             </div>
           </section>
@@ -138,6 +133,7 @@
         </section>
       </section>
     </main>
+    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
     <script src="./game.js"></script>
   </body>
 </html>
