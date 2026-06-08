@@ -399,6 +399,28 @@ button {
   gap: 14px;
 }
 
+.asset-preview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.asset-effect-preview {
+  position: relative;
+  min-height: 190px;
+  overflow: hidden;
+  border: 2px solid #4caf50;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 56%, rgba(139, 230, 127, 0.16), transparent 34%),
+    linear-gradient(180deg, #0b1b13, #071207);
+}
+
+.asset-effect-preview .impact-burst {
+  position: absolute;
+  mix-blend-mode: screen;
+}
+
 #assetConfigText {
   min-height: 210px;
   resize: vertical;

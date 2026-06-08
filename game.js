@@ -206,6 +206,9 @@ const el = {
   assetEnemyWaveColor: document.querySelector("#assetEnemyWaveColor"),
   assetGlyphs: document.querySelector("#assetGlyphs"),
   assetParticleBoost: document.querySelector("#assetParticleBoost"),
+  assetPreviewPlayerFx: document.querySelector("#assetPreviewPlayerFx"),
+  assetPreviewEnemyFx: document.querySelector("#assetPreviewEnemyFx"),
+  assetEffectPreview: document.querySelector("#assetEffectPreview"),
   assetConfigText: document.querySelector("#assetConfigText"),
   assetExportBtn: document.querySelector("#assetExportBtn"),
   assetImportBtn: document.querySelector("#assetImportBtn"),
@@ -389,6 +392,30 @@ function readImageFile(file, callback) {
   reader.readAsDataURL(file);
 }
 
+function effectDraftFromEditor() {
+  return normalizeAssetConfig({
+    effects: {
+      waveColor: el.assetWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.waveColor,
+      enemyWaveColor: el.assetEnemyWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.enemyWaveColor,
+      glyphs: el.assetGlyphs?.value || DEFAULT_ASSET_CONFIG.effects.glyphs,
+      particleBoost: Number(el.assetParticleBoost?.value || 1),
+    },
+  }).effects;
+}
+
+function previewAssetEffect(side) {
+  if (!el.assetEffectPreview) return;
+  el.assetEffectPreview.innerHTML = "";
+  const rect = el.assetEffectPreview.getBoundingClientRect();
+  createImpactBurst(
+    side,
+    0.86,
+    { x: rect.width / 2, y: rect.height / 2 },
+    el.assetEffectPreview,
+    effectDraftFromEditor(),
+  );
+}
+
 function getCustomSprites(dogId = "") {
   const config = getAssetConfig();
   return (dogId && config.dogs?.[dogId]) || config.sprites || {};
@@ -543,6 +570,8 @@ function initSpriteEditor() {
   el.assetBackgroundClear?.addEventListener("click", () => {
     setBackgroundDraft("");
   });
+  el.assetPreviewPlayerFx?.addEventListener("click", () => previewAssetEffect("player"));
+  el.assetPreviewEnemyFx?.addEventListener("click", () => previewAssetEffect("enemy"));
   el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {
     if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
@@ -1145,12 +1174,10 @@ function dogBurstPoint(side) {
   };
 }
 
-function addWave(side, intensity = 0.5) {
+function createImpactBurst(side, intensity = 0.5, point = { x: 0, y: 0 }, container = el.fxLayer, effects = getAssetConfig().effects) {
   const strength = clamp(intensity, 0.25, 1);
-  const effects = getAssetConfig().effects;
   const glyphs = effects.glyphs?.length ? effects.glyphs : DEFAULT_FX_GLYPHS;
   const particleBoost = clamp(Number(effects.particleBoost) || 1, 0.5, 1.8);
-  const point = dogBurstPoint(side);
   const group = document.createElement("div");
   group.className = `impact-burst ${side}-burst`;
   group.style.left = `${point.x}px`;
@@ -1189,8 +1216,13 @@ function addWave(side, intensity = 0.5) {
     spark.style.setProperty("--size", `${22 + Math.random() * 34 * strength}px`);
     group.appendChild(spark);
   }
-  el.fxLayer.appendChild(group);
+  container.appendChild(group);
   window.setTimeout(() => group.remove(), 980);
+  return group;
+}
+
+function addWave(side, intensity = 0.5) {
+  createImpactBurst(side, intensity, dogBurstPoint(side), el.fxLayer);
 }
 
 function addPushText(side, amount, critical = false) {
