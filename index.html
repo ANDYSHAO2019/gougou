@@ -65,42 +65,177 @@
             </div>
           </section>
           <div class="select-actions">
-            <button class="secondary-action" id="spriteEditorBtn" type="button">编辑角色</button>
+            <button class="secondary-action" id="assetEditorBtn" type="button">🎨 资源编辑</button>
             <button class="primary-action start-selected" id="confirmDogBtn" type="button">开始对战</button>
           </div>
         </section>
 
-        <!-- 角色编辑器弹窗 -->
-        <div class="sprite-editor-modal hidden" id="spriteEditorModal">
-          <div class="sprite-editor-panel">
-            <header class="sprite-editor-header">
-              <strong>角色编辑器</strong>
-              <button class="icon-btn" id="spriteEditorClose" type="button">✕</button>
+        <!-- 资源编辑器弹窗 -->
+        <div class="asset-editor-modal hidden" id="assetEditorModal">
+          <div class="asset-editor-panel">
+            <header class="asset-editor-header">
+              <strong>资源编辑器</strong>
+              <button class="icon-btn" id="assetEditorClose" type="button">✕</button>
             </header>
-            <p class="sprite-editor-hint">上传图片替换默认角色。点击格子或拖拽图片到格子上。</p>
-            <div class="sprite-slots" id="spriteSlots">
-              <label class="sprite-slot" data-state="happy">
-                <span class="slot-label">待机</span>
-                <img class="slot-preview" id="slotHappy" alt="待机" />
-                <input class="slot-input" type="file" accept="image/*" data-state="happy" />
-                <button class="slot-clear" data-state="happy" type="button">✕</button>
-              </label>
-              <label class="sprite-slot" data-state="bark">
-                <span class="slot-label">攻击</span>
-                <img class="slot-preview" id="slotBark" alt="攻击" />
-                <input class="slot-input" type="file" accept="image/*" data-state="bark" />
-                <button class="slot-clear" data-state="bark" type="button">✕</button>
-              </label>
-              <label class="sprite-slot" data-state="dead">
-                <span class="slot-label">死亡</span>
-                <img class="slot-preview" id="slotDead" alt="死亡" />
-                <input class="slot-input" type="file" accept="image/*" data-state="dead" />
-                <button class="slot-clear" data-state="dead" type="button">✕</button>
-              </label>
+
+            <nav class="asset-editor-tabs" role="tablist">
+              <button class="asset-tab active" data-tab="bg">背景</button>
+              <button class="asset-tab" data-tab="character">角色</button>
+              <button class="asset-tab" data-tab="effects">特效</button>
+              <button class="asset-tab" data-tab="ui">UI</button>
+            </nav>
+
+            <!-- 背景页 -->
+            <div class="asset-tab-content active" id="tab-bg">
+              <p class="asset-editor-hint">上传背景图片（推荐 1200×675px），替换场景背景。</p>
+              <div class="asset-grid">
+                <label class="asset-item" data-key="arenaBg">
+                  <span class="asset-item-label">主背景图</span>
+                  <div class="asset-item-preview"><img id="preview-arenaBg" alt="" /></div>
+                  <input class="asset-item-input" type="file" accept="image/*" data-key="arenaBg" />
+                  <button class="asset-item-clear" data-key="arenaBg" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="skyColor">
+                  <span class="asset-item-label">天空颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-skyColor" value="#8ed8ff" data-key="skyColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="skyColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="groundColor">
+                  <span class="asset-item-label">地面颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-groundColor" value="#7ed16a" data-key="groundColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="groundColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="sunColor">
+                  <span class="asset-item-label">太阳颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-sunColor" value="#ffd85a" data-key="sunColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="sunColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="cloudColor">
+                  <span class="asset-item-label">云朵颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-cloudColor" value="#ffffff" data-key="cloudColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="cloudColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="fenceColor">
+                  <span class="asset-item-label">围栏颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-fenceColor" value="#f6c36a" data-key="fenceColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="fenceColor" type="button">✕</button>
+                </label>
+              </div>
             </div>
-            <div class="sprite-editor-actions">
-              <button class="secondary-action" id="spriteResetBtn" type="button">恢复默认</button>
-              <button class="primary-action" id="spriteSaveBtn" type="button">保存并应用</button>
+
+            <!-- 角色页 -->
+            <div class="asset-tab-content" id="tab-character">
+              <p class="asset-editor-hint">上传角色图片替换待机/攻击/死亡三个状态。</p>
+              <div class="asset-grid">
+                <label class="asset-item" data-key="happy">
+                  <span class="asset-item-label">待机</span>
+                  <div class="asset-item-preview"><img id="preview-happy" alt="" /></div>
+                  <input class="asset-item-input" type="file" accept="image/*" data-key="happy" />
+                  <button class="asset-item-clear" data-key="happy" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="bark">
+                  <span class="asset-item-label">攻击</span>
+                  <div class="asset-item-preview"><img id="preview-bark" alt="" /></div>
+                  <input class="asset-item-input" type="file" accept="image/*" data-key="bark" />
+                  <button class="asset-item-clear" data-key="bark" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="dead">
+                  <span class="asset-item-label">死亡</span>
+                  <div class="asset-item-preview"><img id="preview-dead" alt="" /></div>
+                  <input class="asset-item-input" type="file" accept="image/*" data-key="dead" />
+                  <button class="asset-item-clear" data-key="dead" type="button">✕</button>
+                </label>
+              </div>
+            </div>
+
+            <!-- 特效页 -->
+            <div class="asset-tab-content" id="tab-effects">
+              <p class="asset-editor-hint">调整特效颜色。图片特效使用角色页的图片。</p>
+              <div class="asset-grid">
+                <label class="asset-item" data-key="waveColor">
+                  <span class="asset-item-label">音波颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-waveColor" value="#ffe066" data-key="waveColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="waveColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="sparkColor">
+                  <span class="asset-item-label">星星颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-sparkColor" value="#ff9f43" data-key="sparkColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="sparkColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="koWinColor">
+                  <span class="asset-item-label">胜利色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-koWinColor" value="#83e17c" data-key="koWinColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="koWinColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="koLoseColor">
+                  <span class="asset-item-label">失败色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-koLoseColor" value="#ff6b6b" data-key="koLoseColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="koLoseColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="comboColor">
+                  <span class="asset-item-label">COMBO 颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-comboColor" value="#ffd84f" data-key="comboColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="comboColor" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="dangerColor">
+                  <span class="asset-item-label">危险色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-dangerColor" value="#ff4d5e" data-key="dangerColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="dangerColor" type="button">✕</button>
+                </label>
+              </div>
+            </div>
+
+            <!-- UI页 -->
+            <div class="asset-tab-content" id="tab-ui">
+              <p class="asset-editor-hint">调整界面配色。</p>
+              <div class="asset-grid">
+                <label class="asset-item" data-key="btnPrimary">
+                  <span class="asset-item-label">主按钮颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-btnPrimary" value="#4caf50" data-key="btnPrimary" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="btnPrimary" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="btnSecondary">
+                  <span class="asset-item-label">次按钮颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-btnSecondary" value="#2a3f2a" data-key="btnSecondary" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="btnSecondary" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="cardBg">
+                  <span class="asset-item-label">卡牌背景色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-cardBg" value="#fff7db" data-key="cardBg" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="cardBg" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="hudBg">
+                  <span class="asset-item-label">HUD 背景色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-hudBg" value="#ffffff" data-key="hudBg" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="hudBg" type="button">✕</button>
+                </label>
+                <label class="asset-item" data-key="micMeterColor">
+                  <span class="asset-item-label">麦克风颜色</span>
+                  <div class="asset-item-preview color-preview"><input type="color" id="preview-micMeterColor" value="#4caf50" data-key="micMeterColor" /></div>
+                  <input class="asset-item-input" type="hidden" />
+                  <button class="asset-item-clear" data-key="micMeterColor" type="button">✕</button>
+                </label>
+              </div>
+            </div>
+
+            <div class="asset-editor-actions">
+              <button class="secondary-action" id="assetResetBtn" type="button">恢复默认</button>
+              <button class="primary-action" id="assetSaveBtn" type="button">保存并应用</button>
             </div>
           </div>
         </div>
