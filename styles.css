@@ -69,13 +69,14 @@ button {
 .select-screen {
   z-index: 30;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 18px;
+  grid-template-rows: auto minmax(220px, 1fr) auto auto;
+  gap: 14px;
   padding: 34px 42px;
   background:
     linear-gradient(180deg, rgba(255, 249, 216, 0.86), rgba(126, 203, 116, 0.54)),
     rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(3px);
+  overflow: auto;
 }
 
 .select-top {
@@ -114,7 +115,7 @@ button {
 }
 
 .dog-card {
-  min-height: 280px;
+  min-height: 250px;
   display: grid;
   grid-template-rows: 1fr auto auto auto auto;
   place-items: center;
@@ -162,6 +163,46 @@ button {
   width: 220px;
 }
 
+.select-screen.online-select {
+  grid-template-rows: auto minmax(190px, auto) auto;
+  gap: 12px;
+}
+
+.select-screen.online-select .dog-card {
+  min-height: 128px;
+  grid-template-columns: 86px 1fr;
+  grid-template-rows: auto auto auto;
+  justify-items: start;
+  align-content: center;
+  padding: 12px;
+}
+
+.select-screen.online-select .card-preview {
+  grid-row: 1 / -1;
+  width: 76px;
+}
+
+.select-screen.online-select .card-preview img {
+  width: 104px;
+  height: 104px;
+  translate: -4px 7px;
+}
+
+.select-screen.online-select .dog-card small,
+.select-screen.online-select .dog-card .stat-row {
+  display: none;
+}
+
+.select-screen.online-select .dog-card strong {
+  font-size: 22px;
+}
+
+.select-screen.online-select .dog-card em {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
 .online-enter {
   min-height: 40px;
   padding: 8px 18px;
@@ -173,8 +214,7 @@ button {
   gap: 10px;
 }
 
-.mode-tabs,
-.online-actions {
+.mode-tabs {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -200,19 +240,97 @@ button {
 
 .online-box {
   display: grid;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 14px;
   border: 4px solid rgba(255, 255, 255, 0.92);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 8px 0 rgba(126, 81, 37, 0.12);
 }
 
-#onlineStatus {
-  min-width: 110px;
-  color: #70452b;
+.room-status {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  border-radius: 8px;
+  background: rgba(255, 251, 220, 0.84);
+}
+
+#roomStateBadge {
+  min-width: 96px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #83e17c, #53b864);
+  color: #ffffff;
   font-size: 13px;
   font-weight: 900;
+  text-align: center;
+  text-shadow: 0 2px 0 rgba(67, 64, 43, 0.3);
+}
+
+#onlineStatus {
+  color: #70452b;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.room-lobby {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.room-player {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 4px 10px;
+  min-height: 92px;
+  padding: 12px;
+  border: 4px solid #ffffff;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 187, 0.92));
+  color: #5e3c2a;
+  box-shadow: 0 7px 0 rgba(126, 81, 37, 0.16);
+}
+
+.room-player.remote-player {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(220, 242, 255, 0.92));
+}
+
+.room-player-tag {
+  grid-row: 1 / -1;
+  align-self: start;
+  min-width: 46px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #ffcf5d;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.room-player strong {
+  font-size: 20px;
+}
+
+.room-player small,
+.room-player em {
+  font-style: normal;
+  font-weight: 900;
+}
+
+.room-player small {
+  color: #7a5638;
+}
+
+.room-player em {
+  color: #4f9f59;
+  font-size: 13px;
 }
 
 .room-grid {
@@ -238,6 +356,21 @@ button {
   color: #26304a;
   font: 900 16px/1.2 Consolas, monospace;
   letter-spacing: 0;
+}
+
+.online-actions {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: center;
+  gap: 10px;
+}
+
+.online-actions button {
+  width: 100%;
+}
+
+.online-actions .online-enter {
+  grid-column: span 2;
 }
 
 .battle-screen {
@@ -2037,6 +2170,20 @@ body {
     grid-row: 1 / -1;
     width: 78px;
     font-size: 48px;
+  }
+
+  .room-status,
+  .room-lobby,
+  .online-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .room-player {
+    min-height: 78px;
+  }
+
+  .online-actions .online-enter {
+    grid-column: auto;
   }
 }
 
