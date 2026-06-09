@@ -232,3 +232,10 @@ P2-7 wave image additive blend target:
 - [x] Wave image overlay keeps randomized self-rotation.
 - [x] Browser validation confirms `plus-lighter`/`screen` blend, transparent opacity, and image CSS variable are applied.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P2-8 wave image performance rollback:
+- [x] Removed additive transparent blend because it caused animation stutter.
+- [x] Wave images render directly on the ring again.
+- [x] Random self-rotation is preserved without pseudo-element blend/filter work.
+- [x] Browser validation confirms direct background image, no pseudo-element image, and spin animation remain.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

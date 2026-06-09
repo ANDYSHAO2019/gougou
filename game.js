@@ -1635,7 +1635,7 @@ function createImpactBurst(side, intensity = 0.5, point = { x: 0, y: 0 }, contai
     wave.style.setProperty("--tilt", `${-10 + Math.random() * 20}deg`);
     wave.style.setProperty("--spin", `${(Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 220)}deg`);
     wave.style.setProperty("--oval", `${0.82 + Math.random() * 0.18}`);
-    if (waveImage) wave.style.setProperty("--wave-image", `url("${waveImage}")`);
+    if (waveImage) wave.style.backgroundImage = `url("${waveImage}")`;
     group.appendChild(wave);
   }
   const particleCount = Math.round((7 + strength * 18) * particleBoost);

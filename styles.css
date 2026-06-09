@@ -2851,39 +2851,23 @@ body {
 }
 
 .wide-wave.image-ring {
-  background: none !important;
-  border-color: color-mix(in srgb, var(--wave-color, #ffffff) 58%, transparent);
-}
-
-.wide-wave.image-ring::before {
-  content: "";
-  position: absolute;
-  inset: -8%;
-  border-radius: inherit;
-  background-image: var(--wave-image);
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  filter: saturate(1.25) brightness(1.35) drop-shadow(0 0 18px var(--wave-color, rgba(255, 255, 255, 0.82)));
-  mix-blend-mode: plus-lighter;
-  animation: wave-image-spin 820ms ease-out forwards;
-  animation-delay: inherit;
-  opacity: 0.62;
-  pointer-events: none;
-}
-
-@supports not (mix-blend-mode: plus-lighter) {
-  .wide-wave.image-ring::before {
-    mix-blend-mode: screen;
-  }
+  border-color: color-mix(in srgb, var(--wave-color, #ffffff) 58%, transparent);
+  animation-name: centered-wave, wave-image-spin;
+  animation-duration: 820ms, 820ms;
+  animation-timing-function: ease-out, ease-out;
+  animation-fill-mode: forwards, forwards;
+  animation-delay: calc(var(--i) * 42ms), calc(var(--i) * 42ms);
 }
 
 @keyframes wave-image-spin {
   from {
-    rotate: 0deg;
+    rotate: var(--tilt);
   }
   to {
-    rotate: var(--spin);
+    rotate: calc(var(--tilt) + var(--spin));
   }
 }
 
