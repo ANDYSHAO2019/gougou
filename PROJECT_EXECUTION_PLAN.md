@@ -219,3 +219,10 @@ P2-5 upload usability fix:
 - [x] Effects editor supports local player/enemy wave image uploads and clear buttons.
 - [x] Browser validation confirms uploaded wave image appears in the effect preview and saves to JSON.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P2-6 wave tuning target:
+- [x] Effects editor exposes a numeric `Wave rings` control.
+- [x] Wave ring count saves to the asset config and affects preview/battle generation.
+- [x] Uploaded wave images spin around their own center with randomized rotation.
+- [x] Browser validation confirms low/high ring values produce different counts and image rings get random spin values.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.

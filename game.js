@@ -228,6 +228,7 @@ const el = {
   assetEnemyWaveImageClear: document.querySelector("#assetEnemyWaveImageClear"),
   assetGlyphs: document.querySelector("#assetGlyphs"),
   assetParticleBoost: document.querySelector("#assetParticleBoost"),
+  assetWaveCount: document.querySelector("#assetWaveCount"),
   assetPreviewPlayerFx: document.querySelector("#assetPreviewPlayerFx"),
   assetPreviewEnemyFx: document.querySelector("#assetPreviewEnemyFx"),
   assetEffectPreview: document.querySelector("#assetEffectPreview"),
@@ -384,6 +385,7 @@ const DEFAULT_ASSET_CONFIG = {
     enemyWaveImage: "",
     glyphs: ["汪", "BARK!", "WOOF!", "@", "#", "!", "*"],
     particleBoost: 1,
+    waveCount: 3,
   },
 };
 
@@ -408,6 +410,7 @@ function normalizeAssetConfig(config = {}) {
     next.effects.glyphs = [...DEFAULT_ASSET_CONFIG.effects.glyphs];
   }
   next.effects.particleBoost = clamp(Number(next.effects.particleBoost) || 1, 0.5, 1.8);
+  next.effects.waveCount = Math.round(clamp(Number(next.effects.waveCount) || DEFAULT_ASSET_CONFIG.effects.waveCount, 1, 8));
   return next;
 }
 
@@ -556,6 +559,7 @@ function effectDraftFromEditor() {
       enemyWaveImage: waveImageDraft("enemy") || getAssetConfig().effects.enemyWaveImage || "",
       glyphs: el.assetGlyphs?.value || DEFAULT_ASSET_CONFIG.effects.glyphs,
       particleBoost: Number(el.assetParticleBoost?.value || 1),
+      waveCount: Number(el.assetWaveCount?.value || DEFAULT_ASSET_CONFIG.effects.waveCount),
     },
   }).effects;
 }
@@ -673,6 +677,7 @@ function loadSpriteEditorUI() {
   setWaveImageDraft("enemy", config.effects.enemyWaveImage || "");
   if (el.assetGlyphs) el.assetGlyphs.value = config.effects.glyphs.join(",");
   if (el.assetParticleBoost) el.assetParticleBoost.value = config.effects.particleBoost;
+  if (el.assetWaveCount) el.assetWaveCount.value = config.effects.waveCount;
   if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(config, null, 2);
   updateAssetConfigSize(config);
   updateAssetBattlePreview();
@@ -765,6 +770,7 @@ function saveSpriteEditor() {
   config.effects.enemyWaveImage = waveImageDraft("enemy");
   config.effects.glyphs = (el.assetGlyphs?.value || "").split(",").map((item) => item.trim()).filter(Boolean);
   config.effects.particleBoost = Number(el.assetParticleBoost?.value || 1);
+  config.effects.waveCount = Number(el.assetWaveCount?.value || DEFAULT_ASSET_CONFIG.effects.waveCount);
   saveAssetConfig(config);
   updateAssetConfigSize(getAssetConfig());
   updateAssetSyncStatus();
@@ -841,6 +847,7 @@ function initSpriteEditor() {
     setWaveImageDraft("enemy", "");
     previewAssetEffect("enemy");
   });
+  el.assetWaveCount?.addEventListener("input", () => previewAssetEffect("player"));
   el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {
     if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
@@ -1619,12 +1626,14 @@ function createImpactBurst(side, intensity = 0.5, point = { x: 0, y: 0 }, contai
   group.style.setProperty("--wave-scale", `${1.72 + strength * 1.1}`);
   group.style.setProperty("--wave-color", side === "enemy" ? effects.enemyWaveColor : effects.waveColor);
   const waveImage = side === "enemy" ? effects.enemyWaveImage : effects.waveImage;
-  const waveCount = Math.round(3 + strength * 4);
+  const baseWaveCount = Math.round(clamp(Number(effects.waveCount) || DEFAULT_ASSET_CONFIG.effects.waveCount, 1, 8));
+  const waveCount = Math.round(clamp(baseWaveCount + strength * 1.5, 1, 10));
   for (let index = 0; index < waveCount; index += 1) {
     const wave = document.createElement("span");
     wave.className = `${index % 2 ? "wide-wave soft-ring" : "wide-wave hard-ring"}${waveImage ? " image-ring" : ""}`;
     wave.style.setProperty("--i", index);
     wave.style.setProperty("--tilt", `${-10 + Math.random() * 20}deg`);
+    wave.style.setProperty("--spin", `${(Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 220)}deg`);
     wave.style.setProperty("--oval", `${0.82 + Math.random() * 0.18}`);
     if (waveImage) wave.style.backgroundImage = `url("${waveImage}")`;
     group.appendChild(wave);

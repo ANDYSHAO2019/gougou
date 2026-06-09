@@ -2857,6 +2857,29 @@ body {
   border-color: color-mix(in srgb, var(--wave-color, #ffffff) 58%, transparent);
 }
 
+.wide-wave.image-ring::before {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  border-radius: inherit;
+  background: inherit;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  animation: wave-image-spin 820ms ease-out forwards;
+  animation-delay: inherit;
+  opacity: 0.94;
+}
+
+@keyframes wave-image-spin {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: var(--spin);
+  }
+}
+
 .enemy-burst .wide-wave {
   border-color: var(--wave-color, var(--asset-enemy-wave-color, rgba(255, 92, 72, 0.9)));
 }
