@@ -2851,9 +2851,7 @@ body {
 }
 
 .wide-wave.image-ring {
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
+  background: none !important;
   border-color: color-mix(in srgb, var(--wave-color, #ffffff) 58%, transparent);
 }
 
@@ -2862,13 +2860,22 @@ body {
   position: absolute;
   inset: -8%;
   border-radius: inherit;
-  background: inherit;
+  background-image: var(--wave-image);
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
+  filter: saturate(1.25) brightness(1.35) drop-shadow(0 0 18px var(--wave-color, rgba(255, 255, 255, 0.82)));
+  mix-blend-mode: plus-lighter;
   animation: wave-image-spin 820ms ease-out forwards;
   animation-delay: inherit;
-  opacity: 0.94;
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+@supports not (mix-blend-mode: plus-lighter) {
+  .wide-wave.image-ring::before {
+    mix-blend-mode: screen;
+  }
 }
 
 @keyframes wave-image-spin {

@@ -226,3 +226,9 @@ P2-6 wave tuning target:
 - [x] Uploaded wave images spin around their own center with randomized rotation.
 - [x] Browser validation confirms low/high ring values produce different counts and image rings get random spin values.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P2-7 wave image additive blend target:
+- [x] Uploaded wave images render as a transparent additive overlay instead of covering the wave ring.
+- [x] Wave image overlay keeps randomized self-rotation.
+- [x] Browser validation confirms `plus-lighter`/`screen` blend, transparent opacity, and image CSS variable are applied.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.
