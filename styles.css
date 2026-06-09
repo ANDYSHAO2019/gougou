@@ -367,6 +367,18 @@ button {
   font-weight: 800;
 }
 
+.slot-upload {
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffe67e, #ffbd4a);
+  color: #654029;
+  font-size: 0.72rem;
+  font-weight: 900;
+  box-shadow: 0 3px 0 rgba(126, 81, 37, 0.18);
+}
+
 .slot-input {
   display: none;
 }
@@ -499,6 +511,12 @@ button {
 }
 
 .asset-preview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.asset-wave-image-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
@@ -2830,6 +2848,13 @@ body {
   inset: -16px;
   border: 4px solid rgba(255, 255, 255, 0.42);
   border-radius: 50%;
+}
+
+.wide-wave.image-ring {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  border-color: color-mix(in srgb, var(--wave-color, #ffffff) 58%, transparent);
 }
 
 .enemy-burst .wide-wave {

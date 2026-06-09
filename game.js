@@ -222,6 +222,10 @@ const el = {
   assetBackgroundPreview: document.querySelector("#assetBackgroundPreview"),
   assetWaveColor: document.querySelector("#assetWaveColor"),
   assetEnemyWaveColor: document.querySelector("#assetEnemyWaveColor"),
+  assetWaveImageInput: document.querySelector("#assetWaveImageInput"),
+  assetEnemyWaveImageInput: document.querySelector("#assetEnemyWaveImageInput"),
+  assetWaveImageClear: document.querySelector("#assetWaveImageClear"),
+  assetEnemyWaveImageClear: document.querySelector("#assetEnemyWaveImageClear"),
   assetGlyphs: document.querySelector("#assetGlyphs"),
   assetParticleBoost: document.querySelector("#assetParticleBoost"),
   assetPreviewPlayerFx: document.querySelector("#assetPreviewPlayerFx"),
@@ -376,6 +380,8 @@ const DEFAULT_ASSET_CONFIG = {
   effects: {
     waveColor: "#ffffff",
     enemyWaveColor: "#ff5c48",
+    waveImage: "",
+    enemyWaveImage: "",
     glyphs: ["汪", "BARK!", "WOOF!", "@", "#", "!", "*"],
     particleBoost: 1,
   },
@@ -509,6 +515,18 @@ function setBackgroundDraft(image = "") {
   if (el.assetBackgroundInput && !image) el.assetBackgroundInput.value = "";
 }
 
+function setWaveImageDraft(side, image = "") {
+  const input = side === "enemy" ? el.assetEnemyWaveImageInput : el.assetWaveImageInput;
+  if (!input) return;
+  input.dataset.assetImage = image || "";
+  if (!image) input.value = "";
+}
+
+function waveImageDraft(side) {
+  const input = side === "enemy" ? el.assetEnemyWaveImageInput : el.assetWaveImageInput;
+  return input?.dataset.assetImage || "";
+}
+
 function readImageFile(file, callback) {
   if (!file || !file.type.startsWith("image/")) return;
   const reader = new FileReader();
@@ -534,6 +552,8 @@ function effectDraftFromEditor() {
     effects: {
       waveColor: el.assetWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.waveColor,
       enemyWaveColor: el.assetEnemyWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.enemyWaveColor,
+      waveImage: waveImageDraft("player") || getAssetConfig().effects.waveImage || "",
+      enemyWaveImage: waveImageDraft("enemy") || getAssetConfig().effects.enemyWaveImage || "",
       glyphs: el.assetGlyphs?.value || DEFAULT_ASSET_CONFIG.effects.glyphs,
       particleBoost: Number(el.assetParticleBoost?.value || 1),
     },
@@ -649,6 +669,8 @@ function loadSpriteEditorUI() {
   }
   if (el.assetWaveColor) el.assetWaveColor.value = config.effects.waveColor;
   if (el.assetEnemyWaveColor) el.assetEnemyWaveColor.value = config.effects.enemyWaveColor;
+  setWaveImageDraft("player", config.effects.waveImage || "");
+  setWaveImageDraft("enemy", config.effects.enemyWaveImage || "");
   if (el.assetGlyphs) el.assetGlyphs.value = config.effects.glyphs.join(",");
   if (el.assetParticleBoost) el.assetParticleBoost.value = config.effects.particleBoost;
   if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(config, null, 2);
@@ -739,6 +761,8 @@ function saveSpriteEditor() {
   config.background.image = el.assetBackgroundPreview ? (el.assetBackgroundPreview.dataset.assetImage || "") : config.background.image || "";
   config.effects.waveColor = el.assetWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.waveColor;
   config.effects.enemyWaveColor = el.assetEnemyWaveColor?.value || DEFAULT_ASSET_CONFIG.effects.enemyWaveColor;
+  config.effects.waveImage = waveImageDraft("player");
+  config.effects.enemyWaveImage = waveImageDraft("enemy");
   config.effects.glyphs = (el.assetGlyphs?.value || "").split(",").map((item) => item.trim()).filter(Boolean);
   config.effects.particleBoost = Number(el.assetParticleBoost?.value || 1);
   saveAssetConfig(config);
@@ -795,6 +819,28 @@ function initSpriteEditor() {
   el.assetPreviewPlayerFx?.addEventListener("click", () => previewAssetEffect("player"));
   el.assetPreviewEnemyFx?.addEventListener("click", () => previewAssetEffect("enemy"));
   el.assetPreviewBattleBtn?.addEventListener("click", previewAssetBattle);
+  el.assetWaveImageInput?.addEventListener("change", () => {
+    const file = el.assetWaveImageInput.files?.[0];
+    readImageFile(file, (dataUrl) => {
+      setWaveImageDraft("player", dataUrl);
+      previewAssetEffect("player");
+    });
+  });
+  el.assetEnemyWaveImageInput?.addEventListener("change", () => {
+    const file = el.assetEnemyWaveImageInput.files?.[0];
+    readImageFile(file, (dataUrl) => {
+      setWaveImageDraft("enemy", dataUrl);
+      previewAssetEffect("enemy");
+    });
+  });
+  el.assetWaveImageClear?.addEventListener("click", () => {
+    setWaveImageDraft("player", "");
+    previewAssetEffect("player");
+  });
+  el.assetEnemyWaveImageClear?.addEventListener("click", () => {
+    setWaveImageDraft("enemy", "");
+    previewAssetEffect("enemy");
+  });
   el.assetDogSelect?.addEventListener("change", loadSpriteEditorUI);
   el.assetExportBtn?.addEventListener("click", () => {
     if (el.assetConfigText) el.assetConfigText.value = JSON.stringify(getAssetConfig(), null, 2);
@@ -823,6 +869,12 @@ function initSpriteEditor() {
     const input = modal.querySelector(`.slot-input[data-state="${state}"]`);
     input?.addEventListener("change", () => {
       if (input.files?.length) handleSpriteFileInput(state, input.files);
+    });
+
+    const uploadBtn = modal.querySelector(`.slot-upload[data-state="${state}"]`);
+    uploadBtn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      input?.click();
     });
 
     const mode = modal.querySelector(`.slot-mode[data-state="${state}"]`);
@@ -1566,13 +1618,15 @@ function createImpactBurst(side, intensity = 0.5, point = { x: 0, y: 0 }, contai
   group.style.setProperty("--wave-opacity", `${0.74 + strength * 0.22}`);
   group.style.setProperty("--wave-scale", `${1.72 + strength * 1.1}`);
   group.style.setProperty("--wave-color", side === "enemy" ? effects.enemyWaveColor : effects.waveColor);
+  const waveImage = side === "enemy" ? effects.enemyWaveImage : effects.waveImage;
   const waveCount = Math.round(3 + strength * 4);
   for (let index = 0; index < waveCount; index += 1) {
     const wave = document.createElement("span");
-    wave.className = index % 2 ? "wide-wave soft-ring" : "wide-wave hard-ring";
+    wave.className = `${index % 2 ? "wide-wave soft-ring" : "wide-wave hard-ring"}${waveImage ? " image-ring" : ""}`;
     wave.style.setProperty("--i", index);
     wave.style.setProperty("--tilt", `${-10 + Math.random() * 20}deg`);
     wave.style.setProperty("--oval", `${0.82 + Math.random() * 0.18}`);
+    if (waveImage) wave.style.backgroundImage = `url("${waveImage}")`;
     group.appendChild(wave);
   }
   const particleCount = Math.round((7 + strength * 18) * particleBoost);

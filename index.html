@@ -98,7 +98,7 @@
                 <select id="assetDogSelect"></select>
               </label>
               <div class="sprite-slots" id="spriteSlots">
-              <label class="sprite-slot" data-state="happy">
+              <div class="sprite-slot" data-state="happy">
                 <span class="slot-label">待机</span>
                 <img class="slot-preview" id="slotHappy" alt="待机" />
                 <select class="slot-mode" data-state="happy">
@@ -106,10 +106,11 @@
                   <option value="sequence">Sequence</option>
                 </select>
                 <span class="slot-meta" data-state="happy">1 frame</span>
+                <button class="slot-upload" data-state="happy" type="button">Upload image</button>
                 <input class="slot-input" type="file" accept="image/*" data-state="happy" multiple />
                 <button class="slot-clear" data-state="happy" type="button">✕</button>
-              </label>
-              <label class="sprite-slot" data-state="bark">
+              </div>
+              <div class="sprite-slot" data-state="bark">
                 <span class="slot-label">攻击</span>
                 <img class="slot-preview" id="slotBark" alt="攻击" />
                 <select class="slot-mode" data-state="bark">
@@ -117,10 +118,11 @@
                   <option value="sequence">Sequence</option>
                 </select>
                 <span class="slot-meta" data-state="bark">1 frame</span>
+                <button class="slot-upload" data-state="bark" type="button">Upload image</button>
                 <input class="slot-input" type="file" accept="image/*" data-state="bark" multiple />
                 <button class="slot-clear" data-state="bark" type="button">✕</button>
-              </label>
-              <label class="sprite-slot" data-state="dead">
+              </div>
+              <div class="sprite-slot" data-state="dead">
                 <span class="slot-label">死亡</span>
                 <img class="slot-preview" id="slotDead" alt="死亡" />
                 <select class="slot-mode" data-state="dead">
@@ -128,9 +130,10 @@
                   <option value="sequence">Sequence</option>
                 </select>
                 <span class="slot-meta" data-state="dead">1 frame</span>
+                <button class="slot-upload" data-state="dead" type="button">Upload image</button>
                 <input class="slot-input" type="file" accept="image/*" data-state="dead" multiple />
                 <button class="slot-clear" data-state="dead" type="button">✕</button>
-              </label>
+              </div>
               </div>
               <div class="asset-battle-preview" id="assetBattlePreview">
                 <div class="asset-preview-stage" id="assetPreviewStage">
@@ -165,6 +168,18 @@
                 <span>对手声波</span>
                 <input id="assetEnemyWaveColor" type="color" value="#ff5c48" />
               </label>
+              <label class="asset-upload-row">
+                <span>Player wave image</span>
+                <input id="assetWaveImageInput" type="file" accept="image/*" />
+              </label>
+              <label class="asset-upload-row">
+                <span>Enemy wave image</span>
+                <input id="assetEnemyWaveImageInput" type="file" accept="image/*" />
+              </label>
+              <div class="asset-wave-image-row">
+                <button class="secondary-action asset-inline-action" id="assetWaveImageClear" type="button">Clear player wave</button>
+                <button class="secondary-action asset-inline-action" id="assetEnemyWaveImageClear" type="button">Clear enemy wave</button>
+              </div>
               <label class="asset-control-row">
                 <span>文字粒子</span>
                 <input id="assetGlyphs" type="text" value="汪,BARK!,WOOF!,@,#,!,*" />

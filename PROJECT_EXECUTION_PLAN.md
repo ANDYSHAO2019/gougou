@@ -212,3 +212,10 @@ P4-3 local stats reset target:
 - [x] Reset clears stats while keeping WP, unlocks, and selected dog.
 - [x] Browser validation confirms cancel/confirm reset behavior.
 - [x] `node --check game.js` and `node tools/smoke-test.js` pass.
+
+P2-5 upload usability fix:
+- [x] Character sprite slots use explicit upload buttons instead of label-wrapped cards.
+- [x] Browser validation confirms clicking Upload image opens the file chooser and saves the custom dog image.
+- [x] Effects editor supports local player/enemy wave image uploads and clear buttons.
+- [x] Browser validation confirms uploaded wave image appears in the effect preview and saves to JSON.
+- [x] `node --check game.js` and `node tools/smoke-test.js` pass.
